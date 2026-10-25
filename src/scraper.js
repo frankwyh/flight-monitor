@@ -1293,7 +1293,7 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons) {
 
       const quoteEvaluation = evaluateFlightQuotes(
         {
-          baseFare,
+                    baseFare,
           taxAmount,
           cabinClass: cabinCode,
           tripType: 'one_way',
@@ -1448,6 +1448,7 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
             stopCity: outTpl.stopCity,
             stopAirport: outTpl.stopAirport,
             layoverMinutes: outTpl.layoverMinutes,
+            stopText: outTpl.stops === 0 ? '直飞' : `经${outTpl.stopCity || ''}转1次 · 停留${formatDuration(outTpl.layoverMinutes)}`,
             durationMinutes: outTpl.durationMinutes,
             durationText: formatDuration(outTpl.durationMinutes),
             baggage: outTpl.baggage,
@@ -1472,11 +1473,13 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
             stopCity: inTpl.stopCity,
             stopAirport: inTpl.stopAirport,
             layoverMinutes: inTpl.layoverMinutes,
+            stopText: inTpl.stops === 0 ? '直飞' : `经${inTpl.stopCity || ''}转1次 · 停留${formatDuration(inTpl.layoverMinutes)}`,
             durationMinutes: inTpl.durationMinutes,
             durationText: formatDuration(inTpl.durationMinutes),
             baggage: inTpl.baggage,
             oneWayRawPrice: inBase + inTax
           },
+          baggage: outTpl.baggage || '免费行李托运',
           baseFare,
           taxAmount,
           rawTotalPrice,
@@ -1508,7 +1511,9 @@ async function fetchAllMonitoredFlights(options = {}) {
   for (const seg of ONE_WAY_SEGMENTS) {
     const segKey = `${seg.from}_${seg.to}`;
     const date = seg.direction === 'outbound' ? outboundDate : inboundDate;
-    oneWayBySegment[seg.id] = buildOneWayFlights(segKey, date, activeCoupons);
+    const owFlights = buildOneWayFlights(segKey, date, activeCoupons);
+    oneWayBySegment[seg.id] = owFlights;
+    oneWayBySegment[segKey] = owFlights;
   }
 
   // 2. 生成 4 种开口/往返组合方案

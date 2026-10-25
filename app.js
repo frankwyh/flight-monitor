@@ -578,6 +578,9 @@ function renderFlightsList() {
       const isFav = state.favorites.includes(f.id);
       const isDrawerOpen = state.openDrawers.has(f.id);
       const bestPlat = f.bestPlatform;
+      const outStopText = f.outbound.stopText || (f.outbound.stops === 0 ? '直飞' : f.outbound.stopCity ? `经${f.outbound.stopCity}转1次` : '1次中转');
+      const inStopText = f.inbound.stopText || (f.inbound.stops === 0 ? '直飞' : f.inbound.stopCity ? `经${f.inbound.stopCity}转1次` : '1次中转');
+      const outBaggage = f.outbound.baggage || f.baggage || '免费行李托运';
       const couponNames = bestPlat.appliedCoupons.map(c => `${c.name}(-¥${c.amount})`).join(' + ');
 
       return `
@@ -609,7 +612,7 @@ function renderFlightsList() {
                   <div class="flight-line-visual">
                     <div class="flight-duration">${f.outbound.durationText}</div>
                     <div class="line-bar ${f.outbound.stops === 0 ? 'direct' : ''}"></div>
-                    <div class="stop-Status ${f.outbound.stops === 0 ? 'direct' : ''}">${f.outbound.stopText}</div>
+                    <div class="stop-Status ${f.outbound.stops === 0 ? 'direct' : ''}">${outStopText}</div>
                   </div>
                   <div class="time-block">
                     <div class="time-val">
@@ -619,7 +622,7 @@ function renderFlightsList() {
                   </div>
                 </div>
                 <div class="leg-meta-right">
-                  ${f.baggage}
+                  ${outBaggage}
                 </div>
               </div>
 
@@ -640,7 +643,7 @@ function renderFlightsList() {
                   <div class="flight-line-visual">
                     <div class="flight-duration">${f.inbound.durationText}</div>
                     <div class="line-bar ${f.inbound.stops === 0 ? 'direct' : ''}"></div>
-                    <div class="stop-Status ${f.inbound.stops === 0 ? 'direct' : ''}">${f.inbound.stopText}</div>
+                    <div class="stop-Status ${f.inbound.stops === 0 ? 'direct' : ''}">${inStopText}</div>
                   </div>
                   <div class="time-block">
                     <div class="time-val">

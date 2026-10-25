@@ -689,12 +689,12 @@ input:focus {
   background: #10b981;
 }
 
-.stop-Status {
+.stop-status, .stop-Status {
   font-size: 11px;
   color: #cbd5e1;
 }
 
-.stop-Status.direct {
+.stop-status.direct, .stop-Status.direct {
   color: #34d399;
   font-weight: 600;
 }
