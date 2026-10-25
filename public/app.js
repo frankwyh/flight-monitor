@@ -17,7 +17,7 @@ const state = {
     alertThresholdDirect: 6900,
     alertThresholdBusiness: 14000,
     barkPushUrl: '',
-    ghRepo: '',
+    ghRepo: 'frankwyh/flight-monitor',
     ghToken: ''
   },
   coupons: [],
