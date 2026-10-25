@@ -1,0 +1,338 @@
+/* 全球/全国通用版扩展样式 */
+
+.watchlist-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: rgba(19, 28, 49, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.watchlist-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  white-space: nowrap;
+}
+
+.watchlist-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.watch-chip {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.watch-chip:hover,
+.watch-chip.active {
+  border-color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+}
+
+.watch-chip .del-watch {
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 0 2px;
+}
+
+.watch-chip .del-watch:hover {
+  color: var(--accent-rose);
+}
+
+/* 通用搜索配置面板 */
+.universal-search-panel {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(19, 28, 49, 0.95));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.route-builder-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 42px 1.2fr 1.1fr 0.95fr;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.builder-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.builder-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.airport-input-combo {
+  display: flex;
+  gap: 6px;
+}
+
+.airport-input-combo select {
+  flex: 1.3;
+  min-width: 0;
+}
+
+.airport-input-combo input {
+  flex: 0.85;
+  min-width: 0;
+}
+
+.route-swap-wrap {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 3px;
+}
+
+.swap-circle-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--accent-cyan);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.swap-circle-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  transform: rotate(180deg);
+}
+
+/* 日期与模糊时间段面板 */
+.date-mode-box {
+  background: rgba(11, 17, 32, 0.65);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.date-mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.holiday-quick-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip-sm {
+  background: rgba(59, 130, 246, 0.14);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.chip-sm:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.date-subpanel {
+  display: none;
+}
+
+.date-subpanel.active {
+  display: block;
+}
+
+.flex-inputs-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.field-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-inline label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.sep-text {
+  padding-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* 模糊时间段 & 日历矩阵网格 */
+.selected-date-pill {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.date-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 10px;
+}
+
+.date-pair-card {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.16s;
+  position: relative;
+}
+
+.date-pair-card:hover {
+  border-color: var(--accent-cyan);
+  transform: translateY(-2px);
+}
+
+.date-pair-card.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 1px #10b981;
+}
+
+.dp-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.dp-tag-lowest {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.dp-dates {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 4px;
+}
+
+.dp-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #34d399;
+}
+
+.dp-price.high {
+  color: #fbbf24;
+}
+
+/* 分级优惠券卡片组 */
+.tier-group-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.tier-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tier-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+.tier-PUBLIC_FREE {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.tier-LIMITED_OR_BANK {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.tier-VIP_EXCLUSIVE {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+.how-to-get-box {
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 5px 9px;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1024px) {
+  .route-builder-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .route-swap-wrap {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .route-builder-grid {
+    grid-template-columns: 1fr;
+  }
+}

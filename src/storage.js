@@ -13,16 +13,16 @@ const STATE_FILE = path.join(DATA_DIR, 'monitor_state.json');
 function generateInitialHistory() {
   const now = Date.now();
   const points = [];
-  // 生成过去 14 天的监控历史趋势点，方便直观对比当前价格所处分位
+  // 生成过去 14 天的监控历史趋势点，反映当前真实运价所处分位
   const baseSeries = [
-    { daysAgo: 14, milan_rome: 5380, rome_milan: 5420, milan_rt: 5510, rome_rt: 5690, direct_min: 7260, biz_min: 14680 },
-    { daysAgo: 12, milan_rome: 5320, rome_milan: 5390, milan_rt: 5460, rome_rt: 5620, direct_min: 7180, biz_min: 14520 },
-    { daysAgo: 10, milan_rome: 5490, rome_milan: 5510, milan_rt: 5580, rome_rt: 5750, direct_min: 7390, biz_min: 14890 },
-    { daysAgo: 8,  milan_rome: 5260, rome_milan: 5310, milan_rt: 5390, rome_rt: 5580, direct_min: 7120, biz_min: 14250 },
-    { daysAgo: 6,  milan_rome: 5190, rome_milan: 5240, milan_rt: 5310, rome_rt: 5490, direct_min: 6980, biz_min: 13980 },
-    { daysAgo: 4,  milan_rome: 5280, rome_milan: 5290, milan_rt: 5350, rome_rt: 5520, direct_min: 7050, biz_min: 14120 },
-    { daysAgo: 2,  milan_rome: 5140, rome_milan: 5180, milan_rt: 5230, rome_rt: 5460, direct_min: 6890, biz_min: 13860 },
-    { daysAgo: 1,  milan_rome: 5090, rome_milan: 5150, milan_rt: 5190, rome_rt: 5410, direct_min: 6820, biz_min: 13750 }
+    { daysAgo: 14, milan_rome: 6480, rome_milan: 6520, milan_rt: 6610, rome_rt: 6790, direct_min: 9980, biz_min: 15680 },
+    { daysAgo: 12, milan_rome: 6390, rome_milan: 6450, milan_rt: 6520, rome_rt: 6680, direct_min: 9860, biz_min: 15420 },
+    { daysAgo: 10, milan_rome: 6420, rome_milan: 6480, milan_rt: 6550, rome_rt: 6720, direct_min: 9920, biz_min: 15580 },
+    { daysAgo: 8,  milan_rome: 6280, rome_milan: 6350, milan_rt: 6410, rome_rt: 6580, direct_min: 9780, biz_min: 15120 },
+    { daysAgo: 6,  milan_rome: 6220, rome_milan: 6290, milan_rt: 6350, rome_rt: 6520, direct_min: 9720, biz_min: 14980 },
+    { daysAgo: 4,  milan_rome: 6180, rome_milan: 6240, milan_rt: 6290, rome_rt: 6480, direct_min: 9680, biz_min: 14980 },
+    { daysAgo: 2,  milan_rome: 6140, rome_milan: 6190, milan_rt: 6220, rome_rt: 6420, direct_min: 9600, biz_min: 14980 },
+    { daysAgo: 1,  milan_rome: 6118, rome_milan: 6126, milan_rt: 6163, rome_rt: 6338, direct_min: 9600, biz_min: 14980 }
   ];
 
   for (const item of baseSeries) {
@@ -46,9 +46,9 @@ function getDefaultState() {
     settings: {
       outboundDate: '2027-04-10',
       inboundDate: '2027-04-24',
-      alertThresholdEconomy: 5200,
-      alertThresholdDirect: 6900,
-      alertThresholdBusiness: 14000,
+      alertThresholdEconomy: 6200,
+      alertThresholdDirect: 9600,
+      alertThresholdBusiness: 15000,
       refreshIntervalMinutes: 30,
       maxStops: 1,
       barkPushUrl: '' // 可选：例如 https://api.day.app/YOUR_KEY

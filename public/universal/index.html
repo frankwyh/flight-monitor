@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>全球/全国通用机票价格与分级神券监控系统</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="通用机票监控" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="../icon.svg" />
+  <link rel="apple-touch-icon" href="../icon.svg" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="./universal.css" />
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-area">
+        <div class="brand-logo" style="background:linear-gradient(135deg,#0ea5e9,#10b981);">🌍</div>
+        <div>
+          <div class="brand-title-row">
+            <h1>全球/全国通用机票监控 (支持模糊时间段 &amp; 分级神券)</h1>
+            <span class="live-badge">
+              <span class="pulse-dot"></span> 云端托管 · 每天2次自动刷新
+            </span>
+          </div>
+          <p class="brand-subtitle" id="universalHeaderSummary">
+            支持任意国内/国际起终点 · 精确日期 / 模糊时间段 / 整月低价日历 · 优惠券按「人人可领 vs 会员专属」分级计算
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">
+          🇮🇹 切回 4/10-4/24 意大利专版
+        </a>
+        <button class="btn btn-primary" id="uniRefreshBtn">
+          <span>🔄</span> 手动刷新
+        </button>
+        <button class="btn btn-glass" id="uniMobileQrBtn">
+          📱 手机二维码
+        </button>
+      </div>
+    </div>
+
+    <!-- 桌面端主导航 -->
+    <nav class="desktop-tabs" id="uniDesktopNav">
+      <button class="nav-tab active" data-tab="uni-tab-search">
+        ✈️ 航线搜索 &amp; 优选航班榜 <span class="tab-pill" id="uniFlightsCountPill">0</span>
+      </button>
+      <button class="nav-tab" data-tab="uni-tab-coupons">
+        🎟️ 分级优惠券库 (人人可领 vs 会员专属) <span class="tab-pill" id="uniCouponsCountPill">0</span>
+      </button>
+      <button class="nav-tab" data-tab="uni-tab-split">
+        ⚖️ 联程 vs 单程拆分对比
+      </button>
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <!-- 手动刷新提示条 -->
+    <div id="uniToastBanner" class="smart-insight-banner" style="display:none; border-color:#10b981; background:rgba(16,185,129,0.16);"></div>
+
+    <!-- 📌 预设热门路线 & 我的监控收藏夹快捷栏 -->
+    <section class="watchlist-bar">
+      <div class="watchlist-label">📌 快速切换监控任务：</div>
+      <div class="watchlist-chips" id="watchlistChipsContainer">
+        <!-- JS 动态渲染预设路线 + 用户保存的监控任务 -->
+      </div>
+      <button class="btn btn-sm btn-outline" id="saveCurrentTaskBtn" title="将当前选择的起终点和日期规则保存到快捷栏">
+        ⭐ 保存当前航线到监控夹
+      </button>
+    </section>
+
+    <!-- ==================== TAB 1: 航线配置器 + 模糊日期矩阵 + 航班列表 ==================== -->
+    <section class="tab-panel active" id="uni-tab-search">
+      <!-- 全能起终点与日期模式搜索面板 -->
+      <div class="universal-search-panel">
+        <div class="route-builder-grid">
+          <!-- 起点 -->
+          <div class="builder-field">
+            <label>🛫 起点城市/机场 (国内/国际不限)</label>
+            <div class="airport-input-combo">
+              <select id="originSelect"></select>
+              <input type="text" id="originCustomInput" placeholder="或手输如 NKG/南京" title="可手动输入任意城市名或三字码" />
+            </div>
+          </div>
+
+          <div class="route-swap-wrap">
+            <button type="button" class="swap-circle-btn" id="swapRouteBtn" title="互换起点与终点">⇄</button>
+          </div>
+
+          <!-- 主终点 A -->
+          <div class="builder-field">
+            <label>🛬 终点 A (主目的地)</label>
+            <div class="airport-input-combo">
+              <select id="destASelect"></select>
+              <input type="text" id="destACustomInput" placeholder="或手输如 CTS/札幌" />
+            </div>
+          </div>
+
+          <!-- 备选/开口终点 B -->
+          <div class="builder-field">
+            <label>🔀 终点 B (选填：开口程/第2备选城市)</label>
+            <div class="airport-input-combo">
+              <select id="destBSelect"></select>
+            </div>
+          </div>
+
+          <!-- 行程类型 -->
+          <div class="builder-field">
+            <label>🎫 行程类型</label>
+            <select id="tripModeSelect">
+              <option value="ROUND_OR_OPENJAW">往返 + 开口程全组合比价 (推荐)</option>
+              <option value="ONE_WAY">仅看单程</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 日期模式切换器：精确日期 vs 模糊时间段 vs 整月/节假日低价日历 -->
+        <div class="date-mode-box">
+          <div class="date-mode-header">
+            <div class="segmented-control" id="dateModeTabs">
+              <button class="seg-btn active" data-mode="FLEX_RANGE">🔀 模糊时间段 (范围+停留天数)</button>
+              <button class="seg-btn" data-mode="EXACT">📅 精确日期 (+前后±3天比价)</button>
+              <button class="seg-btn" data-mode="MONTH_CALENDAR">🗓️ 整月/节假日低价日历</button>
+            </div>
+            <div class="holiday-quick-tags">
+              <span class="text-muted">节假日快选：</span>
+              <button type="button" class="chip-sm" data-holiday="2027-01-01,2027-01-05,3,4">元旦</button>
+              <button type="button" class="chip-sm" data-holiday="2027-02-04,2027-02-16,6,9">春节前后</button>
+              <button type="button" class="chip-sm" data-holiday="2027-04-02,2027-04-12,4,6">清明连休</button>
+              <button type="button" class="chip-sm" data-holiday="2027-04-28,2027-05-12,5,8">五一错峰</button>
+              <button type="button" class="chip-sm" data-holiday="2027-07-10,2027-08-20,6,10">暑期档</button>
+              <button type="button" class="chip-sm" data-holiday="2027-09-26,2027-10-12,7,10">国庆黄金周</button>
+            </div>
+          </div>
+
+          <!-- 子面板 1：模糊时间段 -->
+          <div class="date-subpanel active" id="subpanel-FLEX_RANGE">
+            <div class="flex-inputs-row">
+              <div class="field-inline">
+                <label>最早出发日</label>
+                <input type="date" id="flexStartDate" value="2027-05-01" />
+              </div>
+              <span class="sep-text">至</span>
+              <div class="field-inline">
+                <label>最晚出发日</label>
+                <input type="date" id="flexEndDate" value="2027-05-18" />
+              </div>
+              <div class="field-inline" id="stayDaysGroup">
+                <label>停留天数范围</label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="number" id="stayMinInput" value="5" min="1" max="60" style="width:68px;" />
+                  <span>~</span>
+                  <input type="number" id="stayMaxInput" value="7" min="1" max="60" style="width:68px;" />
+                  <span>天</span>
+                </div>
+              </div>
+              <div class="field-inline">
+                <label>出行偏好</label>
+                <select id="dayPrefSelect">
+                  <option value="ALL">不限星期 (全量搜索最低价)</option>
+                  <option value="WEEKEND_INCLUDE">优先跨周末 (少请年假)</option>
+                  <option value="MIDWEEK_CHEAP">仅看周二/周三/周四错峰神价</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary" id="runSearchBtn">🔍 立即检索最优方案</button>
+            </div>
+          </div>
+
+          <!-- 子面板 2：精确日期 -->
+          <div class="date-subpanel" id="subpanel-EXACT">
+            <div class="flex-inputs-row">
+              <div class="field-inline">
+                <label>去程精确日期</label>
+                <input type="date" id="exactOutDate" value="2027-04-10" />
+              </div>
+              <div class="field-inline" id="exactInDateWrap">
+                <label>返程精确日期</label>
+                <input type="date" id="exactInDate" value="2027-04-24" />
+              </div>
+              <div class="field-inline">
+                <label>前后浮动比价</label>
+                <select id="exactPlusMinusSelect">
+                  <option value="3">自动对比前后 ±3 天差价</option>
+                  <option value="0">仅看当天</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary" id="runSearchExactBtn">🔍 立即检索航班</button>
+            </div>
+          </div>
+
+          <!-- 子面板 3：整月低价日历 -->
+          <div class="date-subpanel" id="subpanel-MONTH_CALENDAR">
+            <div class="flex-inputs-row">
+              <div class="field-inline">
+                <label>选择探索月份</label>
+                <input type="month" id="calendarMonthInput" value="2027-05" />
+              </div>
+              <div class="field-inline">
+                <label>预计游玩天数</label>
+                <input type="number" id="calendarStayDays" value="7" min="1" max="45" style="width:80px;" />
+              </div>
+              <button type="button" class="btn btn-primary" id="runSearchCalendarBtn">🗓️ 生成整月低价日历</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模糊时间段 / 整月日历 最佳日期组合矩阵结果区 -->
+      <div class="panel-card" id="dateMatrixSection">
+        <div class="panel-card-header">
+          <div>
+            <h3 id="dateMatrixTitle">🗓️ 模糊时间段内「最优出发/返程日期组合」低价榜</h3>
+            <p class="text-muted" id="dateMatrixSubtitle">点击任意日期卡片，下方将立即展示该日期组合的全部航司、舱位及 6 大平台折后报价</p>
+          </div>
+          <div class="selected-date-pill" id="activeDatePairPill">当前查看：--</div>
+        </div>
+        <div class="date-matrix-grid" id="dateMatrixGrid">
+          <!-- JS 动态渲染最佳日期组合卡片或月度热力日历 -->
+        </div>
+      </div>
+
+      <!-- 进出组合全景卡片 (当选了2个目的地时，展示 A进B出、B进A出、A往返、B往返 4种卡片) -->
+      <div class="combo-cards-grid" id="uniComboCardsGrid"></div>
+
+      <!-- 航班列表筛选器 -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>进出路线</label>
+          <div class="segmented-control" id="uniComboFilter">
+            <button class="seg-btn active" data-value="ALL">全部路线</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label>直飞/中转</label>
+          <div class="segmented-control" id="uniStopsFilter">
+            <button class="seg-btn active" data-value="ALL">直飞+1次中转</button>
+            <button class="seg-btn" data-value="DIRECT_ONLY">仅看直飞</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label>舱位等级</label>
+          <div class="segmented-control" id="uniCabinFilter">
+            <button class="seg-btn active" data-value="ALL">不限舱位</button>
+            <button class="seg-btn" data-value="ECONOMY">经济舱</button>
+            <button class="seg-btn" data-value="PREMIUM_ECONOMY">超级经济</button>
+            <button class="seg-btn" data-value="BUSINESS">公务舱</button>
+          </div>
+        </div>
+
+        <div class="filter-row-selects">
+          <div class="select-wrap">
+            <label>排序方式</label>
+            <select id="uniSortSelect">
+              <option value="NET_ASC">💰 折后到手实付价最低</option>
+              <option value="DURATION_ASC">⚡ 飞行总耗时最短</option>
+              <option value="DISCOUNT_DESC">🎟️ 优惠券抵扣最多</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 当前已启用优惠券等级提示条 -->
+      <div class="smart-insight-banner" id="uniCouponPolicyBanner"></div>
+
+      <!-- 航班卡片列表 -->
+      <div class="flights-list" id="uniFlightsList"></div>
+    </section>
+
+    <!-- ==================== TAB 2: 分级优惠券库 (人人可领 vs 会员专属) ==================== -->
+    <section class="tab-panel" id="uni-tab-coupons">
+      <div class="panel-card" style="border-color:rgba(16,185,129,0.4);">
+        <div class="panel-card-header">
+          <div>
+            <h3>💡 为什么将优惠券分为 3 个等级？（解答：优惠券是人人都能领吗？）</h3>
+            <p class="text-muted">
+              并非所有大额券都是人人可领！为了防止把您没有的会员券算进总价导致“虚标低价”，通用版默认<strong>只开启【🟢 人人免费可领】的公开普惠券</strong>；如果您持有 <strong>淘宝 88VIP</strong> 或 <strong>携程钻卡/黑钻</strong>，可在下方第三级手动打开开关，系统会立即重算您的专属到手价。
+            </p>
+          </div>
+          <div class="coupon-bulk-btns">
+            <button class="btn btn-sm btn-primary" id="presetPublicOnlyBtn">🟢 仅启用人人可领券 (推荐默认)</button>
+            <button class="btn btn-sm btn-glass" id="presetEnableVipBtn">🟣 我有 88VIP/钻卡 (全部启用)</button>
+            <button class="btn btn-sm btn-outline" id="presetBarePriceBtn">⚪ 全部关闭 (仅看含税裸票价)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="coupons-layout-grid">
+        <div id="tieredCouponsContainer">
+          <!-- JS 按 🟢人人可领、🟡银行/限时、🟣会员专属 三组渲染，含详细领取入口说明 -->
+        </div>
+
+        <div class="panel-card">
+          <h3>➕ 添加您自己领到的优惠券</h3>
+          <p class="text-muted">如果您在任何平台领到了新的机票券，添加到这里即可立即参与全站计算</p>
+          <form id="uniAddCouponForm" class="custom-form">
+            <div class="form-row">
+              <label>所属平台</label>
+              <select id="uniNewCouponPlat">
+                <option value="qunar">去哪儿旅行</option>
+                <option value="ctrip">携程旅行</option>
+                <option value="fliggy">飞猪旅行</option>
+                <option value="tongcheng">同程旅行</option>
+                <option value="airline_direct">航司官方App</option>
+                <option value="ALL">全平台通用 (支付/银行卡立减)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>适用范围</label>
+              <select id="uniNewCouponScope">
+                <option value="ALL">国内+国际通用</option>
+                <option value="INTL">仅限国际/港澳台机票</option>
+                <option value="DOMESTIC">仅限国内机票</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>优惠券名称</label>
+              <input type="text" id="uniNewCouponName" placeholder="例如：去哪儿App领券满2000减100" required />
+            </div>
+            <div class="form-grid-2">
+              <div class="form-row">
+                <label>满减门槛 (元)</label>
+                <input type="number" id="uniNewCouponMin" value="2000" min="0" step="50" required />
+              </div>
+              <div class="form-row">
+                <label>立减金额 (元)</label>
+                <input type="number" id="uniNewCouponDisc" value="100" min="1" step="5" required />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">添加并实时重算到手价</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 联程 vs 单程拆分对比 ==================== -->
+    <section class="tab-panel" id="uni-tab-split">
+      <div class="panel-card">
+        <h3>⚖️ 当前航线：往返/开口联程套票 vs 两段单程分开买 深度比价</h3>
+        <p class="text-muted" style="margin-bottom:14px;">
+          自动对比当前选定日期下「直接买往返/开口联程」与「去程单买 + 返程单买（分别使用单程优惠券）」哪种更划算：
+        </p>
+        <div class="split-comparison-table-wrap">
+          <table class="data-table" id="uniSplitTable">
+            <thead>
+              <tr>
+                <th>进出路线方案</th>
+                <th>联程/开口套票最低实付</th>
+                <th>去程单买最低</th>
+                <th>返程单买最低</th>
+                <th>两段单买合计</th>
+                <th>最优购票结论</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 手机端底部导航栏 -->
+  <nav class="mobile-bottom-nav" id="uniMobileNav">
+    <button class="mob-nav-item active" data-tab="uni-tab-search">
+      <span class="mob-icon">🔍</span>
+      <span class="mob-label">通用查价</span>
+    </button>
+    <button class="mob-nav-item" data-tab="uni-tab-coupons">
+      <span class="mob-icon">🎟️</span>
+      <span class="mob-label">分级神券</span>
+    </button>
+    <button class="mob-nav-item" data-tab="uni-tab-split">
+      <span class="mob-icon">⚖️</span>
+      <span class="mob-label">拆分对比</span>
+    </button>
+    <a class="mob-nav-item" href="../index.html" style="text-decoration:none;">
+      <span class="mob-icon">🇮🇹</span>
+      <span class="mob-label">意大利版</span>
+    </a>
+  </nav>
+
+  <!-- 手机扫码弹窗 -->
+  <div class="modal-backdrop hidden" id="uniQrModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📱 iPhone 扫码打开通用版 (关机可用)</h3>
+        <button class="modal-close" id="closeUniQrBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">使用 iPhone 相机或微信扫描下方二维码，随时随地查询全球/全国任意航线与模糊时间段低价：</p>
+        <div class="qr-box" id="uniQrBox"></div>
+        <div class="lan-url-copy-box">
+          <input type="text" id="uniUrlInput" readonly />
+          <button class="btn btn-sm btn-primary" id="copyUniUrlBtn">复制网址</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./airports.js"></script>
+  <script src="./coupons-universal.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

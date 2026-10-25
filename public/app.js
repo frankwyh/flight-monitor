@@ -111,21 +111,10 @@ function evaluateFlightQuotesBrowser(flightItem, activeCoupons, platformsMeta, p
   const airlineCode = flightItem.airlineCode;
   const baseTotal = baseFare + taxAmount;
 
-  const defaultOffsets = {
-    ctrip: 0,
-    fliggy: 20,
-    qunar: -35,
-    tongcheng: -15,
-    airline_direct: ['CA', 'MU', 'HO', 'QR', 'EK'].includes(airlineCode) ? -10 : 45,
-    google_flights: -50
-  };
-
   const platformQuotes = [];
   for (const [platformId, platformMeta] of Object.entries(platformsMeta)) {
-    const offset = defaultOffsets[platformId] || 0;
-    const cabinMultiplier = cabinClass === 'BUSINESS' ? 2.4 : cabinClass === 'PREMIUM_ECONOMY' ? 1.4 : 1;
-    const rawTotalPrice = Math.max(800, Math.round(baseTotal + offset * cabinMultiplier));
-    const adjustedBaseFare = Math.max(400, rawTotalPrice - taxAmount);
+    const rawTotalPrice = baseTotal;
+    const adjustedBaseFare = baseFare;
 
     const context = {
       platformId,
@@ -966,16 +955,31 @@ function renderCouponsTab() {
           ? `票面 -${Math.round((c.discountRate || 0.05) * 100)}%`
           : `-¥${c.discountAmount}`;
 
+      const tierBadge =
+        c.tier === 'PUBLIC_FREE'
+          ? '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,0.18);color:#34d399;font-weight:600;border:1px solid rgba(16,185,129,0.3);">🟢 人人免费可领</span>'
+          : c.tier === 'LIMITED_OR_BANK'
+          ? '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,0.18);color:#fbbf24;font-weight:600;border:1px solid rgba(245,158,11,0.3);">🟡 银行支付立减/限时抢</span>'
+          : '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(168,85,247,0.18);color:#c084fc;font-weight:600;border:1px solid rgba(168,85,247,0.3);">🟣 VIP/高门槛会员专属 (默认关)</span>';
+
+      const howToGetHtml = c.howToGet
+        ? `<div style="font-size:12px;color:#38bdf8;margin-top:5px;background:rgba(15,23,42,0.6);padding:6px 10px;border-radius:6px;border-left:3px solid #38bdf8;">📍 <strong>如何获取：</strong>${c.howToGet}</div>`
+        : '';
+
       return `
         <div class="coupon-item-card ${c.enabled ? 'enabled' : ''}">
           <div class="coupon-left">
             <div class="coupon-amount-badge">${badgeText}</div>
             <div class="coupon-info">
-              <h4>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
                 <span class="badge badge-combo">${platName}</span>
+                ${tierBadge}
+              </div>
+              <h4 style="margin:2px 0 4px 0;">
                 ${c.name}
               </h4>
-              <p>${c.description || `满 ¥${c.minSpend} 可用`}</p>
+              <p style="color:#cbd5e1;font-size:13px;">${c.description || `满 ¥${c.minSpend} 可用`}</p>
+              ${howToGetHtml}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">

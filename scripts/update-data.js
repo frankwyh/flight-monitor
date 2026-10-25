@@ -86,6 +86,19 @@ async function runUpdate() {
     }
   }
 
+  // 同步通用版目录 public/universal 到根目录 universal
+  const publicUniDir = path.join(PUBLIC_DIR, 'universal');
+  const rootUniDir = path.join(ROOT_DIR, 'universal');
+  if (fs.existsSync(publicUniDir)) {
+    if (!fs.existsSync(rootUniDir)) {
+      fs.mkdirSync(rootUniDir, { recursive: true });
+    }
+    const uniFiles = fs.readdirSync(publicUniDir);
+    for (const uFile of uniFiles) {
+      fs.copyFileSync(path.join(publicUniDir, uFile), path.join(rootUniDir, uFile));
+    }
+  }
+
   console.log(`✅ 静态数据已写入: ${LATEST_JSON_PATH} 并同步至根目录`);
 
   // 如果环境变量配置了 BARK_PUSH_URL，发送巡检简报到 iOS
