@@ -36,6 +36,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+
+      - name: 📦 安装抓取与依赖包
+        run: npm ci || npm install
 
       - name: 🔄 执行机票价格抓取与神券重算 (更新最新运价数据)
         env:

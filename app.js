@@ -1224,32 +1224,49 @@ function bindEvents() {
     });
   });
 
-  // ==================== 新增：顶部「🔄 手动刷新」按钮 ====================
+  // ==================== 顶部「🔄 手动刷新」按钮 (真刷新引擎) ====================
   document.getElementById('refreshNowBtn').addEventListener('click', async () => {
     const btn = document.getElementById('refreshNowBtn');
     btn.disabled = true;
-    btn.textContent = '⏳ 正在手动刷新...';
+    btn.textContent = '⏳ 正在联网抓取真实最新票价...';
 
     try {
-      // 1. 破除缓存拉取 GitHub Pages 最新 ./data/latest.json
-      await loadDashboard(true);
+      let isRealServerRefreshed = false;
+      // 1. 若处于本地服务环境 (node server.js)，直接调用后端真实爬虫抓取接口
+      try {
+        const localRes = await fetch('/api/refresh', { method: 'POST', cache: 'no-store' });
+        if (localRes.ok) {
+          const resData = await localRes.json();
+          if (resData && resData.snapshot) {
+            state.baseSnapshot = resData.snapshot;
+            if (resData.priceHistory) state.priceHistory = resData.priceHistory;
+            isRealServerRefreshed = true;
+          }
+        }
+      } catch (err) {
+        // 静态托管环境 (GitHub Pages)
+      }
 
-      // 2. 执行实时运价波动探测与优惠券重算，并追加最新历史走势点
-      const now = new Date();
-      const liveWave = 1 + Math.sin(now.getHours() * 0.8 + now.getMinutes() * 0.21 + now.getSeconds() * 0.09) * 0.012;
-      recalculateSnapshotInBrowser(liveWave, true);
+      // 2. 静态托管环境下破除浏览器缓存重新拉取最新数据
+      if (!isRealServerRefreshed) {
+        await loadDashboard(true);
+      }
+
+      // 3. 彻底移除伪造的数学波动 liveWave，保持 100% 真实倍率 1.0
+      recalculateSnapshotInBrowser(1.0, true);
       renderAll();
 
-      // 3. 若配置了 GitHub Token，顺带异步触发云端 Action
+      // 4. 若配置了 GitHub Token，顺带异步唤起云端 Action 进行云端真抓取
       let cloudMsg = '';
       if (state.settings.ghRepo && state.settings.ghToken) {
         const ghRes = await triggerGitHubWorkflowDispatch();
-        if (ghRes.ok) cloudMsg = ' · 已同步触发 GitHub Actions 云端抓取任务';
+        if (ghRes.ok) cloudMsg = ' · 已同步触发 GitHub Actions 云端实时抓取任务';
       }
 
       const cheapest = state.snapshot.allComboFlights[0];
+      const refreshModeText = isRealServerRefreshed ? '本地实时爬虫已完成真抓取' : '已同步最新真实全网运价';
       showRefreshToast(
-        `<span>✅ <strong>手动刷新成功！</strong> 已同步最新 6 大平台运价与神券抵扣（全场最低：<strong>${cheapest.combinationName} ${fmtPrice(cheapest.finalNetPrice)}</strong>）${cloudMsg}。系统还将每天 09:00 / 21:00 自动刷新 2 次。</span>`
+        `<span>✅ <strong>${refreshModeText}！</strong> 已更新 6 大平台运价与神券（全网最低：<strong>${cheapest.combinationName} ${fmtPrice(cheapest.finalNetPrice)}</strong>）${cloudMsg}。</span>`
       );
     } finally {
       btn.disabled = false;

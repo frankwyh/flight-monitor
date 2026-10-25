@@ -41,6 +41,7 @@ function getLocalLanIp() {
  * 触发一次全航线抓取与优惠券重算
  */
 async function refreshFlightData(recordHistory = true) {
+  console.log('🔄 [本地服务] 触发全网机票与 GDS 实时真刷新抓取...');
   latestSnapshot = await fetchAllMonitoredFlights({
     outboundDate: appState.settings.outboundDate,
     inboundDate: appState.settings.inboundDate,
@@ -50,6 +51,31 @@ async function refreshFlightData(recordHistory = true) {
   if (recordHistory) {
     recordSnapshotToHistory(appState, latestSnapshot);
   }
+  saveState(appState);
+
+  // 同步写入持久化静态文件供静态网页与 GitHub Pages 使用
+  try {
+    const payload = JSON.stringify({
+      ok: true,
+      generatedAt: new Date().toISOString(),
+      scheduleInfo: '每天 09:00 与 21:00 自动巡检刷新 (Google Flights 实时 GDS 引擎)',
+      settings: appState.settings,
+      coupons: appState.coupons,
+      platforms: PLATFORMS,
+      priceHistory: appState.priceHistory,
+      favorites: appState.favorites || [],
+      snapshot: latestSnapshot
+    }, null, 2);
+
+    const rootDataPath = path.join(__dirname, 'data', 'latest.json');
+    const publicDataPath = path.join(__dirname, 'public', 'data', 'latest.json');
+    fs.writeFileSync(rootDataPath, payload, 'utf8');
+    fs.writeFileSync(publicDataPath, payload, 'utf8');
+    console.log('💾 [本地服务] 实时最新数据已同步更新至 data/latest.json 及 public/data/latest.json');
+  } catch (err) {
+    console.warn('⚠️ [本地服务] 写入静态文件失败:', err.message);
+  }
+
   return latestSnapshot;
 }
 
