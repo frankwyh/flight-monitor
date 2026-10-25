@@ -1,6 +1,6 @@
 /**
  * GitHub Actions 云端定时更新脚本 (每天早晚 2 次自动运行 + 支持手动触发)
- * 生成静态数据文件 public/data/latest.json 供 GitHub Pages 免后端加载
+ * 生成静态数据文件 public/data/latest.json 及同步根目录 data/latest.json，兼容所有 GitHub Pages 模式
  */
 
 const fs = require('fs');
@@ -11,8 +11,12 @@ const { fetchAllMonitoredFlights } = require('../src/scraper');
 const { loadState, saveState, recordSnapshotToHistory } = require('../src/storage');
 const { PLATFORMS } = require('../src/coupons');
 
-const PUBLIC_DATA_DIR = path.join(__dirname, '..', 'public', 'data');
+const ROOT_DIR = path.join(__dirname, '..');
+const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
+const PUBLIC_DATA_DIR = path.join(PUBLIC_DIR, 'data');
+const ROOT_DATA_DIR = path.join(ROOT_DIR, 'data');
 const LATEST_JSON_PATH = path.join(PUBLIC_DATA_DIR, 'latest.json');
+const ROOT_LATEST_JSON_PATH = path.join(ROOT_DATA_DIR, 'latest.json');
 
 function sendBarkNotification(barkUrl, title, body) {
   return new Promise(resolve => {
@@ -52,6 +56,9 @@ async function runUpdate() {
   if (!fs.existsSync(PUBLIC_DATA_DIR)) {
     fs.mkdirSync(PUBLIC_DATA_DIR, { recursive: true });
   }
+  if (!fs.existsSync(ROOT_DATA_DIR)) {
+    fs.mkdirSync(ROOT_DATA_DIR, { recursive: true });
+  }
 
   const staticPayload = {
     ok: true,
@@ -65,8 +72,21 @@ async function runUpdate() {
     snapshot
   };
 
-  fs.writeFileSync(LATEST_JSON_PATH, JSON.stringify(staticPayload, null, 2), 'utf8');
-  console.log(`✅ 静态数据已写入: ${LATEST_JSON_PATH}`);
+  const jsonStr = JSON.stringify(staticPayload, null, 2);
+  fs.writeFileSync(LATEST_JSON_PATH, jsonStr, 'utf8');
+  fs.writeFileSync(ROOT_LATEST_JSON_PATH, jsonStr, 'utf8');
+
+  // 同步静态前端文件到仓库根目录，使 GitHub Pages 无论选 "GitHub Actions" 还是 "Deploy from a branch (main / root)" 都能直接访问
+  const staticFiles = ['index.html', 'styles.css', 'app.js', 'manifest.json', 'sw.js', 'icon.svg'];
+  for (const file of staticFiles) {
+    const srcFile = path.join(PUBLIC_DIR, file);
+    const destFile = path.join(ROOT_DIR, file);
+    if (fs.existsSync(srcFile)) {
+      fs.copyFileSync(srcFile, destFile);
+    }
+  }
+
+  console.log(`✅ 静态数据已写入: ${LATEST_JSON_PATH} 并同步至根目录`);
 
   // 如果环境变量配置了 BARK_PUSH_URL，发送巡检简报到 iOS
   const barkUrl = process.env.BARK_PUSH_URL || state.settings.barkPushUrl;

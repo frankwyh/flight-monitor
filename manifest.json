@@ -1,0 +1,19 @@
+{
+  "name": "上海⇄米兰/罗马 机票监控",
+  "short_name": "意航监控",
+  "description": "4/10上海→米兰/罗马 · 4/24返程 开口程/往返及优惠券云端监控 (每天2次自动刷新+手动刷新)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

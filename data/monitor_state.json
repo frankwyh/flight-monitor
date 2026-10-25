@@ -283,6 +283,16 @@
       "rome_round_trip": 5436,
       "direct_lowest": 6066,
       "business_lowest": 12209
+    },
+    {
+      "timestamp": "2026-10-25T11:53:54.521Z",
+      "label": "10/25 19:53",
+      "milan_in_rome_out": 5551,
+      "rome_in_milan_out": 5540,
+      "milan_round_trip": 5433,
+      "rome_round_trip": 5525,
+      "direct_lowest": 6186,
+      "business_lowest": 12485
     }
   ],
   "favorites": []
