@@ -1,0 +1,1346 @@
+:root {
+  --bg-main: #0b1120;
+  --bg-card: #131c31;
+  --bg-card-hover: #192540;
+  --bg-elevated: #1e293b;
+  --border-color: rgba(148, 163, 184, 0.16);
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --accent-cyan: #38bdf8;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-purple: #8b5cf6;
+  --accent-rose: #f43f5e;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background-color: var(--bg-main);
+  background-image: radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.15), transparent 40%),
+                    radial-gradient(circle at 85% 10%, rgba(16, 185, 129, 0.08), transparent 35%);
+  color: var(--text-main);
+  line-height: 1.5;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
+  min-height: 100vh;
+}
+
+/* 顶部导航栏 */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11, 17, 32, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.brand-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.brand-title-row h1 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.brand-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.brand-subtitle strong {
+  color: var(--accent-cyan);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.date-quick-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.date-quick-bar input[type="date"] {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.action-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 按钮通用样式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 15px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.18s ease;
+  color: var(--text-main);
+  background: var(--bg-elevated);
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  transform: translateY(-1px);
+}
+
+.btn-glass {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.btn-glass:hover {
+  background: rgba(56, 189, 248, 0.24);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.btn-block {
+  width: 100%;
+  padding: 11px;
+}
+
+/* 桌面端导航 Tab */
+.desktop-tabs {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  gap: 6px;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+  overflow-x: auto;
+}
+
+.nav-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.nav-tab:hover {
+  color: var(--text-main);
+}
+
+.nav-tab.active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
+}
+
+.tab-pill {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--accent-cyan);
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+}
+
+/* 主体容器 */
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 18px 20px;
+}
+
+.section-header-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.section-header-inline h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.last-update-info {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* 顶部 4 种进出组合全景卡片 */
+.combo-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.combo-summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.combo-summary-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.5);
+  background: var(--bg-card-hover);
+}
+
+.combo-summary-card.selected {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 1px var(--accent-cyan), var(--shadow-card);
+}
+
+.combo-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.combo-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.combo-route-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.combo-route-tag.recommended {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.combo-airports-line {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.combo-price-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.combo-price-num {
+  font-size: 25px;
+  font-weight: 800;
+  color: #34d399;
+  letter-spacing: -0.5px;
+}
+
+.combo-price-raw {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.combo-best-channel {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.combo-sub-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  padding-top: 9px;
+  font-size: 11.5px;
+}
+
+.sub-metric-item span {
+  color: var(--text-muted);
+  display: block;
+}
+
+.sub-metric-item strong {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+/* Tab 面板切换 */
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* 筛选工具栏 */
+.filter-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-group label,
+.select-wrap label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.segmented-control {
+  display: inline-flex;
+  background: var(--bg-main);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.seg-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.seg-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.filter-row-selects {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.select-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+select,
+input[type="text"],
+input[type="number"] {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+}
+
+select:focus,
+input:focus {
+  border-color: var(--accent-cyan);
+}
+
+/* 购票攻略智能提示横幅 */
+.smart-insight-banner {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.16), rgba(16, 185, 129, 0.14));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: var(--radius-md);
+  padding: 11px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 航班列表卡片 */
+.flights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flight-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.flight-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.flight-card-main {
+  display: grid;
+  grid-template-columns: 1fr 270px;
+  gap: 18px;
+  align-items: center;
+}
+
+.flight-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-combo {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+.badge-direct {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.badge-cabin-ECONOMY {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.badge-cabin-PREMIUM_ECONOMY {
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+}
+
+.badge-cabin-BUSINESS {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge-cabin-FIRST {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+}
+
+.badge-highlight {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+}
+
+/* 往返两段航程排布 */
+.legs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leg-row {
+  display: grid;
+  grid-template-columns: 74px 175px 1fr 150px;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.55);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.leg-dir-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.leg-dir-tag span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.leg-airline-info strong {
+  font-size: 13.5px;
+  display: block;
+}
+
+.leg-airline-info span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.leg-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.time-block {
+  text-align: center;
+}
+
+.time-block .time-val {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.time-block .plus-day {
+  font-size: 11px;
+  color: var(--accent-amber);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.time-block .airport-code {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.flight-line-visual {
+  flex: 1;
+  max-width: 180px;
+  text-align: center;
+}
+
+.flight-duration {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.line-bar {
+  height: 2px;
+  background: rgba(148, 163, 184, 0.35);
+  position: relative;
+  margin: 4px 0;
+}
+
+.line-bar.direct {
+  background: #10b981;
+}
+
+.stop-Status {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.stop-Status.direct {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.leg-meta-right {
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* 航班卡片右侧价格与优惠决策区 */
+.flight-price-side {
+  border-left: 1px solid var(--border-color);
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.price-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.best-platform-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+}
+
+.fav-star-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.65;
+}
+
+.fav-star-btn.active {
+  opacity: 1;
+}
+
+.net-price-display {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.net-price-display .currency {
+  font-size: 15px;
+  font-weight: 700;
+  color: #34d399;
+}
+
+.net-price-display .amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: #34d399;
+  line-height: 1.1;
+}
+
+.net-price-display .raw-strike {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.coupon-applied-summary {
+  font-size: 11.5px;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.split-save-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.split-save-hint strong {
+  color: #38bdf8;
+}
+
+.price-side-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* 展开的多平台比价抽屉 */
+.platform-drawer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-color);
+  display: none;
+}
+
+.platform-drawer.open {
+  display: block;
+}
+
+.platform-quotes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.plat-quote-item {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  position: relative;
+}
+
+.plat-quote-item.winner {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.plat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.plat-net-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.plat-quote-item.winner .plat-net-val {
+  color: #34d399;
+}
+
+.plat-formula {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* 通用卡片与表格 */
+.panel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.panel-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.panel-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.split-comparison-table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+/* 自由拼单计算器 */
+.split-calculator-grid,
+.coupons-layout-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 18px;
+}
+
+.calc-selectors {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+
+.calc-col {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calc-col label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.calc-plus {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  padding-top: 18px;
+}
+
+.calc-result-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.oneway-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.oneway-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 430px;
+  overflow-y: auto;
+}
+
+.ow-mini-item {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 优惠券列表 */
+.coupons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coupon-item-card {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.coupon-item-card.enabled {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.coupon-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coupon-amount-badge {
+  min-width: 78px;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.coupon-info h4 {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.coupon-info p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Toggle 开关 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 25px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #334155;
+  transition: 0.2s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 19px;
+  width: 19px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-green);
+}
+
+input:checked + .slider:before {
+  transform: translateX(21px);
+}
+
+/* 表单样式 */
+.custom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-row label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.form-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.feedback-msg {
+  font-size: 12.5px;
+  color: #34d399;
+  min-height: 18px;
+}
+
+/* 走势图 SVG 容器 */
+.chart-container {
+  width: 100%;
+  min-height: 270px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-item i {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* iOS 安装引导步骤 */
+.ios-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.step-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-item p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.step-item code {
+  color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* 手机底部毛玻璃导航栏 */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-color);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  z-index: 200;
+  justify-content: space-around;
+}
+
+.mob-nav-item {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.mob-nav-item .mob-icon {
+  font-size: 19px;
+}
+
+.mob-nav-item.active {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+/* 模态弹窗 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  max-width: 440px;
+  width: 100%;
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.qr-box {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+  background: #fff;
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.lan-url-copy-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lan-url-copy-box input {
+  flex: 1;
+}
+
+.ios-pwa-tip {
+  font-size: 12px;
+  color: #cbd5e1;
+  background: rgba(59, 130, 246, 0.15);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}
+
+/* 响应式适配 (平板与 iOS 手机端) */
+@media (max-width: 1100px) {
+  .combo-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .split-calculator-grid,
+  .coupons-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .desktop-tabs {
+    display: none;
+  }
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  .header-inner {
+    padding: 10px 14px;
+  }
+  .brand-title-row h1 {
+    font-size: 16px;
+  }
+  .main-container {
+    padding: 12px 12px;
+  }
+  .combo-cards-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .combo-price-num {
+    font-size: 20px;
+  }
+  .flight-card-main {
+    grid-template-columns: 1fr;
+  }
+  .flight-price-side {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    padding-left: 0;
+    padding-top: 12px;
+  }
+  .leg-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .leg-meta-right {
+    text-align: left;
+  }
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .combo-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

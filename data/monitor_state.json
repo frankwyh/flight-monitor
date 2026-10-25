@@ -1,0 +1,289 @@
+{
+  "settings": {
+    "outboundDate": "2027-04-10",
+    "inboundDate": "2027-04-24",
+    "alertThresholdEconomy": 5200,
+    "alertThresholdDirect": 6900,
+    "alertThresholdBusiness": 14000,
+    "refreshIntervalMinutes": 30,
+    "maxStops": 1,
+    "barkPushUrl": ""
+  },
+  "coupons": [
+    {
+      "id": "fliggy_88vip_intl",
+      "platform": "fliggy",
+      "name": "飞猪 88VIP 出境机票专享券",
+      "category": "platform_coupon",
+      "type": "threshold_minus",
+      "minSpend": 4000,
+      "discountAmount": 180,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "88VIP会员每月可领国际机票满4000减180元大额券（公务舱/开口程通用）"
+    },
+    {
+      "id": "fliggy_thursday_flash",
+      "platform": "fliggy",
+      "name": "飞猪周四出境闪促膨胀券",
+      "category": "platform_promo",
+      "type": "threshold_minus",
+      "minSpend": 6000,
+      "discountAmount": 260,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "欧洲长途航线满6000减260元（与88VIP券择优使用一张平台券）"
+    },
+    {
+      "id": "ctrip_europe_multi",
+      "platform": "ctrip",
+      "name": "携程欧洲多程/开口联订立减券",
+      "category": "platform_coupon",
+      "type": "threshold_minus",
+      "minSpend": 3800,
+      "discountAmount": 160,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": [
+        "open_jaw",
+        "round_trip"
+      ],
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "携程国际往返/缺口程联订专项补贴满3800减160元"
+    },
+    {
+      "id": "ctrip_diamond_biz",
+      "platform": "ctrip",
+      "name": "携程黑钻/金钻两舱专享立减",
+      "category": "platform_coupon",
+      "type": "threshold_minus",
+      "minSpend": 10000,
+      "discountAmount": 450,
+      "cabinLimit": [
+        "BUSINESS",
+        "FIRST"
+      ],
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "国际公务舱/头等舱满10000减450元专享大额券"
+    },
+    {
+      "id": "qunar_lowprice_150",
+      "platform": "qunar",
+      "name": "去哪儿国际机票比价直减券",
+      "category": "platform_coupon",
+      "type": "threshold_minus",
+      "minSpend": 3500,
+      "discountAmount": 150,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "去哪儿App国际机票频道领券满3500减150元"
+    },
+    {
+      "id": "qunar_single_80",
+      "platform": "qunar",
+      "name": "去哪儿国际单程立减券",
+      "category": "platform_coupon",
+      "type": "threshold_minus",
+      "minSpend": 1800,
+      "discountAmount": 80,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": [
+        "one_way"
+      ],
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "单程机票满1800减80元，适合拆分单买时每段分别抵扣"
+    },
+    {
+      "id": "airline_ca_mu_ho_member",
+      "platform": "airline_direct",
+      "name": "国航/东航/吉祥 App 会员日直减 5%",
+      "category": "airline_promo",
+      "type": "percentage_base",
+      "discountRate": 0.05,
+      "maxDiscount": 500,
+      "minSpend": 2000,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": [
+        "CA",
+        "MU",
+        "HO"
+      ],
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "东航每月9/18日、国航每月同月同日、吉祥每月25日会员日官网/App购票享票面95折+首单礼包"
+    },
+    {
+      "id": "airline_foreign_promo",
+      "platform": "airline_direct",
+      "name": "外航官网优惠码 (QR/EK/LH/TK/AY)",
+      "category": "airline_promo",
+      "type": "threshold_minus",
+      "minSpend": 4200,
+      "discountAmount": 220,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": [
+        "QR",
+        "EK",
+        "LH",
+        "AF",
+        "KL",
+        "TK",
+        "AY",
+        "LX"
+      ],
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "卡航/阿联酋/汉莎/土航中国区官网银联/支付宝专属Promo Code立减220元"
+    },
+    {
+      "id": "payment_bank_crossborder",
+      "platform": "ALL",
+      "name": "银行卡/支付立减 (招行/中行/银联/支付宝)",
+      "category": "payment_discount",
+      "type": "threshold_minus",
+      "minSpend": 3000,
+      "discountAmount": 60,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": false,
+      "description": "携程程支付/飞猪支付宝分期免息立减/银联云闪付满3000随机立减50~88元（按均值60元计）"
+    },
+    {
+      "id": "tongcheng_intl_pass",
+      "platform": "tongcheng",
+      "name": "同程国际机票省钱卡券包",
+      "category": "platform_coupon",
+      "type": "threshold_minus",
+      "minSpend": 3200,
+      "discountAmount": 135,
+      "cabinLimit": "ALL",
+      "tripTypeLimit": "ALL",
+      "AirlineLimit": "ALL",
+      "enabled": true,
+      "stackableWithPayment": true,
+      "description": "同程小程序国际机票满3200减135元叠加出行礼包"
+    }
+  ],
+  "priceHistory": [
+    {
+      "timestamp": "2026-10-11T11:28:09.148Z",
+      "label": "10/11",
+      "milan_in_rome_out": 5380,
+      "rome_in_milan_out": 5420,
+      "milan_round_trip": 5510,
+      "rome_round_trip": 5690,
+      "direct_lowest": 7260,
+      "business_lowest": 14680
+    },
+    {
+      "timestamp": "2026-10-13T11:28:09.148Z",
+      "label": "10/13",
+      "milan_in_rome_out": 5320,
+      "rome_in_milan_out": 5390,
+      "milan_round_trip": 5460,
+      "rome_round_trip": 5620,
+      "direct_lowest": 7180,
+      "business_lowest": 14520
+    },
+    {
+      "timestamp": "2026-10-15T11:28:09.148Z",
+      "label": "10/15",
+      "milan_in_rome_out": 5490,
+      "rome_in_milan_out": 5510,
+      "milan_round_trip": 5580,
+      "rome_round_trip": 5750,
+      "direct_lowest": 7390,
+      "business_lowest": 14890
+    },
+    {
+      "timestamp": "2026-10-17T11:28:09.148Z",
+      "label": "10/17",
+      "milan_in_rome_out": 5260,
+      "rome_in_milan_out": 5310,
+      "milan_round_trip": 5390,
+      "rome_round_trip": 5580,
+      "direct_lowest": 7120,
+      "business_lowest": 14250
+    },
+    {
+      "timestamp": "2026-10-19T11:28:09.148Z",
+      "label": "10/19",
+      "milan_in_rome_out": 5190,
+      "rome_in_milan_out": 5240,
+      "milan_round_trip": 5310,
+      "rome_round_trip": 5490,
+      "direct_lowest": 6980,
+      "business_lowest": 13980
+    },
+    {
+      "timestamp": "2026-10-21T11:28:09.148Z",
+      "label": "10/21",
+      "milan_in_rome_out": 5280,
+      "rome_in_milan_out": 5290,
+      "milan_round_trip": 5350,
+      "rome_round_trip": 5520,
+      "direct_lowest": 7050,
+      "business_lowest": 14120
+    },
+    {
+      "timestamp": "2026-10-23T11:28:09.148Z",
+      "label": "10/23",
+      "milan_in_rome_out": 5140,
+      "rome_in_milan_out": 5180,
+      "milan_round_trip": 5230,
+      "rome_round_trip": 5460,
+      "direct_lowest": 6890,
+      "business_lowest": 13860
+    },
+    {
+      "timestamp": "2026-10-24T11:28:09.148Z",
+      "label": "10/24",
+      "milan_in_rome_out": 5090,
+      "rome_in_milan_out": 5150,
+      "milan_round_trip": 5190,
+      "rome_round_trip": 5410,
+      "direct_lowest": 6820,
+      "business_lowest": 13750
+    },
+    {
+      "timestamp": "2026-10-25T11:28:46.460Z",
+      "label": "10/25 19:28",
+      "milan_in_rome_out": 5457,
+      "rome_in_milan_out": 5445,
+      "milan_round_trip": 5343,
+      "rome_round_trip": 5431,
+      "direct_lowest": 6059,
+      "business_lowest": 12193
+    },
+    {
+      "timestamp": "2026-10-25T11:35:47.746Z",
+      "label": "10/25 19:35",
+      "milan_in_rome_out": 5462,
+      "rome_in_milan_out": 5450,
+      "milan_round_trip": 5347,
+      "rome_round_trip": 5436,
+      "direct_lowest": 6066,
+      "business_lowest": 12209
+    }
+  ],
+  "favorites": []
+}

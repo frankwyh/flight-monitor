@@ -1,0 +1,13 @@
+{
+  "name": "italy-flight-monitor",
+  "version": "2.0.0",
+  "description": "上海 ⇄ 米兰/罗马 机票价格与平台优惠券云端监控系统 (GitHub Pages + GitHub Actions 每天2次自动刷新 + 手动刷新)",
+  "main": "scripts/update-data.js",
+  "scripts": {
+    "update-data": "node scripts/update-data.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

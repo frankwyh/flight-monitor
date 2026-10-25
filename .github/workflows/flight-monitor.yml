@@ -1,0 +1,63 @@
+name: ✈️ 意大利机票监控 (每天2次自动刷新 + 部署 GitHub Pages)
+
+on:
+  # 每天自动刷新 2 次：UTC 01:00 (北京时间 09:00) 与 UTC 13:00 (北京时间 21:00)
+  schedule:
+    - cron: '0 1,13 * * *'
+
+  # 支持手动触发刷新 (GitHub 页面或网页端 API 调用)
+  workflow_dispatch:
+
+  # 代码推送时自动构建并发布到 GitHub Pages
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-and-data"
+  cancel-in-progress: false
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
+    steps:
+      - name: 📥 检出仓库代码
+        uses: actions/checkout@v4
+
+      - name: 🟢 配置 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 🔄 执行机票价格抓取与神券重算 (生成 public/data/latest.json)
+        env:
+          BARK_PUSH_URL: ${{ secrets.BARK_PUSH_URL }}
+        run: node scripts/update-data.js
+
+      - name: 💾 提交最新价格走势回仓库
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/monitor_state.json public/data/latest.json
+          git diff --staged --quiet || git commit -m "chore(data): 自动更新 4/10-4/24 中意机票价格快照 [skip ci]"
+          git push || true
+
+      - name: 🌐 配置 GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 📦 上传 GitHub Pages 静态包 (./public)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+
+      - name: 🚀 发布到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

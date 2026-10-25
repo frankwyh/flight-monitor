@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>上海 ⇄ 米兰/罗马 机票价格与优惠券云端监控</title>
+  <!-- iOS PWA 专属适配标签 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="意航监控" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- 顶部导航与监控状态栏 -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-area">
+        <div class="brand-logo">✈️</div>
+        <div>
+          <div class="brand-title-row">
+            <h1>中意机票全网比价与神券云端监控</h1>
+            <span class="live-badge" id="liveStatusBadge" title="GitHub Actions 每天 09:00 与 21:00 自动刷新 2 次，电脑关机也可在手机查看">
+              <span class="pulse-dot"></span> 云端托管 · 每天2次自动刷新
+            </span>
+          </div>
+          <p class="brand-subtitle" id="routeHeaderDesc">
+            去程 <strong>04-10</strong> 上海(PVG/SHA) → 米兰(MXP) / 罗马(FCO) &nbsp;|&nbsp; 返程 <strong>04-24</strong> 罗马(FCO) / 米兰(MXP) → 上海
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="date-quick-bar">
+          <label>去程
+            <input type="date" id="outboundDateInput" value="2027-04-10" />
+          </label>
+          <span class="date-arrow">⇄</span>
+          <label>返程
+            <input type="date" id="inboundDateInput" value="2027-04-24" />
+          </label>
+          <button class="btn btn-sm btn-outline" id="applyDateBtn">更新日期</button>
+        </div>
+
+        <div class="action-buttons-group">
+          <button class="btn btn-primary" id="refreshNowBtn" title="立即重新拉取并计算最新全网机票价格与优惠券">
+            <span id="refreshBtnIcon">🔄</span> 手动刷新
+          </button>
+          <button class="btn btn-glass" id="openMobileModalBtn">
+            📱 iOS手机二维码
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 桌面端主导航栏 -->
+    <nav class="desktop-tabs" id="desktopNav">
+      <button class="nav-tab active" data-tab="tab-flights">
+        ✈️ 开口/往返优选榜 <span class="tab-pill" id="totalFlightsPill">0</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-split">
+        ⚖️ 联程 vs 单程拆分对比
+      </button>
+      <button class="nav-tab" data-tab="tab-coupons">
+        🎟️ 平台活动与优惠券库 <span class="tab-pill" id="activeCouponsPill">0</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-trends">
+        📈 价格走势 &amp; 云端设置
+      </button>
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <!-- 手动刷新反馈提示条 -->
+    <div id="refreshToastBanner" class="smart-insight-banner" style="display:none; border-color:#10b981; background:rgba(16,185,129,0.16);"></div>
+
+    <!-- 4种进出组合全景低价看板（常驻顶部，点击可直接筛选对应路线） -->
+    <section class="combo-overview-section">
+      <div class="section-header-inline">
+        <div>
+          <h2>🇮🇹 4 种进出方案实时地板价总览（已叠加最优平台优惠券）</h2>
+          <p class="text-muted">GitHub 云端每天早 09:00 / 晚 21:00 自动刷新 2 次，您也可随时点击右上角「🔄 手动刷新」立即重算最新价格</p>
+        </div>
+        <div class="last-update-info" id="lastUpdateText">最后更新：加载中...</div>
+      </div>
+      <div class="combo-cards-grid" id="comboCardsGrid">
+        <!-- 由 JS 动态渲染 4 张组合卡片 -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 1: 开口/往返优选榜 ==================== -->
+    <section class="tab-panel active" id="tab-flights">
+      <!-- 多维筛选器 -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>进出搭配</label>
+          <div class="segmented-control" id="comboFilterGroup">
+            <button class="seg-btn active" data-value="ALL">全部4种</button>
+            <button class="seg-btn" data-value="milan_in_rome_out">米进罗出</button>
+            <button class="seg-btn" data-value="rome_in_milan_out">罗进米出</button>
+            <button class="seg-btn" data-value="milan_round_trip">米进米出</button>
+            <button class="seg-btn" data-value="rome_round_trip">罗进罗出</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label>直飞/中转</label>
+          <div class="segmented-control" id="stopsFilterGroup">
+            <button class="seg-btn active" data-value="ALL">直飞+1次中转</button>
+            <button class="seg-btn" data-value="BOTH_DIRECT">仅去返双直飞</button>
+            <button class="seg-btn" data-value="HAS_DIRECT">至少单程直飞</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label>舱位等级</label>
+          <div class="segmented-control" id="cabinFilterGroup">
+            <button class="seg-btn active" data-value="ALL">不限舱位</button>
+            <button class="seg-btn" data-value="ECONOMY">经济舱</button>
+            <button class="seg-btn" data-value="PREMIUM_ECONOMY">超级经济</button>
+            <button class="seg-btn" data-value="BUSINESS">公务舱</button>
+            <button class="seg-btn" data-value="FIRST">头等舱</button>
+          </div>
+        </div>
+
+        <div class="filter-row-selects">
+          <div class="select-wrap">
+            <label for="airlineFilterSelect">航空公司</label>
+            <select id="airlineFilterSelect">
+              <option value="ALL">全部航空公司 (不限)</option>
+              <option value="CA">中国国际航空 (CA)</option>
+              <option value="MU">中国东方航空 (MU)</option>
+              <option value="HO">吉祥航空 (HO)</option>
+              <option value="QR">卡塔尔航空 (QR)</option>
+              <option value="EK">阿联酋航空 (EK)</option>
+              <option value="LH">汉莎航空 (LH)</option>
+              <option value="AF">法国航空 (AF)</option>
+              <option value="TK">土耳其航空 (TK)</option>
+              <option value="CX">国泰航空 (CX)</option>
+              <option value="AY">芬兰航空 (AY)</option>
+            </select>
+          </div>
+
+          <div class="select-wrap">
+            <label for="sortBySelect">排序方式</label>
+            <select id="sortBySelect">
+              <option value="NET_PRICE_ASC">💰 折后到手实付价最低</option>
+              <option value="DURATION_ASC">⚡ 总飞行耗时最短</option>
+              <option value="DISCOUNT_DESC">🎟️ 优惠券抵扣最多</option>
+              <option value="SAVED_SPLIT_DESC">⚖️ 比单买两段省最多</option>
+              <option value="FAVORITES_FIRST">⭐ 我的收藏优先</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 购票攻略智能提示条 -->
+      <div class="smart-insight-banner" id="smartInsightBanner">
+        <!-- JS 动态生成最优出票建议 -->
+      </div>
+
+      <!-- 航班列表 -->
+      <div class="flights-list" id="flightsListContainer">
+        <!-- JS 动态渲染航班卡片 -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: 开口联程 vs 单程拆分对比 ==================== -->
+    <section class="tab-panel" id="tab-split">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div>
+            <h3>⚖️ 联程/开口套票 vs 两段单程分开买 深度比价</h3>
+            <p class="text-muted">国际机票通常「开口联程/往返套票」享有航司联程运价折扣；但部分跨航司直飞组合也可拆分单买并用两张单程券</p>
+          </div>
+        </div>
+
+        <div class="split-comparison-table-wrap">
+          <table class="data-table" id="splitVsComboTable">
+            <thead>
+              <tr>
+                <th>进出路线方案</th>
+                <th>联程/开口套票最低实付</th>
+                <th>去程单买最低 (4/10)</th>
+                <th>返程单买最低 (4/24)</th>
+                <th>两段单买合计</th>
+                <th>结论与差价</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS 渲染 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 自由拼单计算器 + 4段单程独立榜单 -->
+      <div class="split-calculator-grid">
+        <div class="panel-card">
+          <h3>🧮 单程自由拼票计算器（跨航司任意混搭）</h3>
+          <p class="text-muted">分别选择 4/10 去程单程与 4/24 返程单程，自动对比「分开买两张单程」与「直接买开口/往返联程」谁更便宜</p>
+          <div class="calc-selectors">
+            <div class="calc-col">
+              <label>① 选择 4/10 去程单程 (上海 → 米兰/罗马)</label>
+              <select id="calcOutboundSelect"></select>
+            </div>
+            <div class="calc-plus">+</div>
+            <div class="calc-col">
+              <label>② 选择 4/24 返程单程 (罗马/米兰 → 上海)</label>
+              <select id="calcInboundSelect"></select>
+            </div>
+          </div>
+          <div class="calc-result-box" id="calcResultBox">
+            <!-- JS 渲染拼单对比结果 -->
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="oneway-header-row">
+            <h3>🛫 4 段独立单程实时价格榜</h3>
+            <div class="segmented-control" id="oneWaySegmentTabs">
+              <button class="seg-btn active" data-seg="PVG_MXP">4/10 沪→米</button>
+              <button class="seg-btn" data-seg="PVG_FCO">4/10 沪→罗</button>
+              <button class="seg-btn" data-seg="MXP_PVG">4/24 米→沪</button>
+              <button class="seg-btn" data-seg="FCO_PVG">4/24 罗→沪</button>
+            </div>
+          </div>
+          <div class="oneway-list" id="oneWayListContainer">
+            <!-- JS 渲染单程航班列表 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 平台优惠活动与优惠券中心 ==================== -->
+    <section class="tab-panel" id="tab-coupons">
+      <div class="coupons-layout-grid">
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <div>
+              <h3>🎟️ 平台活动、会员券与信用卡立减开关</h3>
+              <p class="text-muted">勾选您目前已有的会员或可领取的优惠券，浏览器端将立即实时重算全站所有机票「折后实付价」并自动保存！</p>
+            </div>
+            <div class="coupon-bulk-btns">
+              <button class="btn btn-sm btn-outline" id="enableAllCouponsBtn">全选优惠</button>
+              <button class="btn btn-sm btn-outline" id="disableAllCouponsBtn">仅看裸票价</button>
+            </div>
+          </div>
+          <div class="coupons-list" id="couponsListContainer">
+            <!-- JS 渲染优惠券开关卡片 -->
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <h3>➕ 添加自定义优惠券 / 平台活动</h3>
+          <p class="text-muted">如果您在携程、飞猪、去哪儿或银行 App 抢到了新的满减券，添加到这里即可自动纳入比价计算</p>
+          <form id="addCouponForm" class="custom-form">
+            <div class="form-row">
+              <label>所属平台</label>
+              <select id="newCouponPlatform" required>
+                <option value="fliggy">飞猪旅行 (Fliggy)</option>
+                <option value="ctrip">携程旅行 (Ctrip)</option>
+                <option value="qunar">去哪儿旅行 (Qunar)</option>
+                <option value="tongcheng">同程旅行</option>
+                <option value="airline_direct">航司官网/App</option>
+                <option value="ALL">全平台通用 (银行卡/支付立减)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>优惠券/活动名称</label>
+              <input type="text" id="newCouponName" placeholder="例如：飞猪出境机票神券满5000减300" required />
+            </div>
+            <div class="form-grid-2">
+              <div class="form-row">
+                <label>满减门槛 (元)</label>
+                <input type="number" id="newCouponMinSpend" value="4000" min="0" step="100" required />
+              </div>
+              <div class="form-row">
+                <label>立减金额 (元)</label>
+                <input type="number" id="newCouponDiscount" value="200" min="1" step="10" required />
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-row">
+                <label>适用舱位</label>
+                <select id="newCouponCabin">
+                  <option value="ALL">不限舱位</option>
+                  <option value="ECONOMY">仅经济舱</option>
+                  <option value="BUSINESS">仅公务舱/商务舱</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>叠加类型</label>
+                <select id="newCouponCategory">
+                  <option value="platform_coupon">平台主券 (同平台择优1张)</option>
+                  <option value="payment_discount">支付/银行立减 (可与平台券叠加)</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">添加并重新计算全站机票到手价</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: 价格走势 & 云端设置 ==================== -->
+    <section class="tab-panel" id="tab-trends">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div>
+            <h3>📈 4/10去 - 4/24回 历史价格走势与低位区间分析</h3>
+            <p class="text-muted">GitHub Actions 每天 2 次（09:00 / 21:00）自动记录折后实付最低价，也可点击顶部「🔄 手动刷新」即时追加最新采样点</p>
+          </div>
+          <div class="chart-legend" id="chartLegend">
+            <span class="legend-item"><i style="background:#38bdf8"></i> 米进罗出(最低)</span>
+            <span class="legend-item"><i style="background:#a78bfa"></i> 罗进米出(最低)</span>
+            <span class="legend-item"><i style="background:#34d399"></i> 双直飞最低</span>
+          </div>
+        </div>
+        <div class="chart-container" id="priceTrendChartBox">
+          <!-- JS 渲染交互式 SVG 折线图 -->
+        </div>
+      </div>
+
+      <div class="coupons-layout-grid">
+        <div class="panel-card">
+          <h3>🔔 心理预期价位预警 &amp; GitHub 云端 / iOS 推送配置</h3>
+          <p class="text-muted">支持配置目标心理价位、iOS Bark 锁屏推送，以及可选配置 GitHub 仓库信息以从网页一键触发云端 Action</p>
+          <form id="alertSettingsForm" class="custom-form">
+            <div class="form-grid-3">
+              <div class="form-row">
+                <label>经济舱目标提醒价 (元)</label>
+                <input type="number" id="settingAlertEco" value="5200" step="100" />
+              </div>
+              <div class="form-row">
+                <label>去返双直飞目标价 (元)</label>
+                <input type="number" id="settingAlertDirect" value="6900" step="100" />
+              </div>
+              <div class="form-row">
+                <label>公务舱特价目标价 (元)</label>
+                <input type="number" id="settingAlertBiz" value="14000" step="200" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label>iOS Bark 推送地址 (选填，iPhone 免费安装 Bark App 获取专属链接)</label>
+              <input type="text" id="settingBarkUrl" placeholder="例如：https://api.day.app/您的BarkKey" />
+            </div>
+            <div class="form-grid-2">
+              <div class="form-row">
+                <label>GitHub 仓库 (选填，格式: 用户名/仓库名)</label>
+                <input type="text" id="settingGhRepo" placeholder="例如：yourname/flight-monitor" />
+              </div>
+              <div class="form-row">
+                <label>GitHub Token (选填，用于网页直接触发云端 Action)</label>
+                <input type="password" id="settingGhToken" placeholder="ghp_xxx (仅保存在您本机浏览器)" />
+              </div>
+            </div>
+            <div class="form-actions-row">
+              <button type="submit" class="btn btn-primary">💾 保存设置</button>
+              <button type="button" class="btn btn-outline" id="testNotificationBtn">📲 发送测试提醒 (网页+iOS)</button>
+              <button type="button" class="btn btn-glass" id="triggerCloudActionBtn">☁️ 触发 GitHub Action 云端刷新</button>
+            </div>
+            <div id="notifyTestFeedback" class="feedback-msg"></div>
+          </form>
+        </div>
+
+        <div class="panel-card">
+          <h3>📱 关机也能看：GitHub Public + iOS 主屏幕 App 指南</h3>
+          <div class="ios-guide-steps">
+            <div class="step-item">
+              <span class="step-num">1</span>
+              <div>
+                <strong>全天候 24 小时云端在线（电脑关机不影响）</strong>
+                <p>通过 GitHub Pages 公开网址：<code id="iosGuideUrlCode">https://您的用户名.github.io/flight-monitor/</code>，手机用 5G 流量或任意 Wi-Fi 随时随地打开。</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">2</span>
+              <div>
+                <strong>每天 2 次自动刷新 + 随时手动刷新</strong>
+                <p>GitHub Actions 每天北京时间 <strong>09:00</strong> 和 <strong>21:00</strong> 自动在云端抓取并更新价格；您也可随时点击页面顶部 <strong>「🔄 手动刷新」</strong> 按钮立即更新。</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">3</span>
+              <div>
+                <strong>添加到 iPhone 主屏幕 (PWA 原生体验)</strong>
+                <p>在 iPhone Safari 打开本页后，点击底部 <strong>「分享 ⎋」→「添加到主屏幕」</strong>，即可在桌面生成独立 App 图标！</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- iOS 手机端底部毛玻璃导航栏 (移动端自动显示) -->
+  <nav class="mobile-bottom-nav" id="mobileNav">
+    <button class="mob-nav-item active" data-tab="tab-flights">
+      <span class="mob-icon">✈️</span>
+      <span class="mob-label">机票优选</span>
+    </button>
+    <button class="mob-nav-item" data-tab="tab-split">
+      <span class="mob-icon">⚖️</span>
+      <span class="mob-label">拆分对比</span>
+    </button>
+    <button class="mob-nav-item" data-tab="tab-coupons">
+      <span class="mob-icon">🎟️</span>
+      <span class="mob-label">神券抵扣</span>
+    </button>
+    <button class="mob-nav-item" data-tab="tab-trends">
+      <span class="mob-icon">📈</span>
+      <span class="mob-label">走势/设置</span>
+    </button>
+  </nav>
+
+  <!-- 手机端扫码与 iOS 同步弹窗 -->
+  <div class="modal-backdrop hidden" id="mobileQrModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📱 iPhone 扫码随时随地查看 (关机可用)</h3>
+        <button class="modal-close" id="closeMobileModalBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">部署到 GitHub Pages 后，使用 iPhone 相机或微信扫描下方二维码，无论电脑是否开机、无论在 Wi-Fi 还是 5G 网络下均可直接访问：</p>
+        <div class="qr-box" id="qrCanvasContainer"></div>
+        <div class="lan-url-copy-box">
+          <input type="text" id="mobileLanUrlInput" readonly />
+          <button class="btn btn-sm btn-primary" id="copyLanUrlBtn">复制网址</button>
+        </div>
+        <div class="ios-pwa-tip">
+          💡 <strong>iOS 主屏幕安装提示：</strong>在 iPhone Safari 打开后，点击底部「分享」→「添加到主屏幕」，即可生成独立全屏 App 图标！
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
