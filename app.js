@@ -6,7 +6,7 @@
  *   3. 支持配置 GitHub Repo + Token 直接在手机/电脑网页端远程触发 GitHub Actions workflow_dispatch 云端爬虫
  */
 
-const STORAGE_KEY = 'italy_flight_monitor_user_state_v7';
+const STORAGE_KEY = 'italy_flight_monitor_user_state_v8';
 
 const state = {
   isStaticMode: true,
@@ -648,7 +648,7 @@ function renderFlightsList() {
             <!-- 右侧实付价与优惠叠加栏 -->
             <div class="flight-price-side">
               <div class="price-top-row">
-                <span class="best-platform-pill">🏆 ${bestPlat.platformName} 最优</span>
+                <span class="best-platform-pill">🏆 ${f.isBothDirect ? (f.isSameAirline ? '官方往返联程' : '双直飞组合特价') : '携程官方'}</span>
                 <button class="fav-star-btn ${isFav ? 'active' : ''}" data-fav-id="${f.id}" title="收藏关注此方案">
                   ${isFav ? '⭐' : '☆'}
                 </button>
@@ -664,45 +664,72 @@ function renderFlightsList() {
                 ✅ 携程/航司官方真实出票价 · 无隐藏加价
               </div>
 
-              <div class="split-save-hint">
-                ${
-                  f.isSameAirline && f.isBothDirect
-                    ? `⚖️ 携程组合特价(分开出票): <strong>${fmtPrice(f.rawTotalPrice)}</strong>`
-                    : `⚖️ 相比两段单买合计 (${fmtPrice(f.splitSameFlightPrice)}) <strong>立省 ${fmtPrice(f.savedVsSplit)}</strong>`
-                }
+              <div class="split-save-hint" style="color:#38bdf8; font-weight:600;">
+                ${f.pairingTypeLabel || '直飞专线'}
               </div>
 
-              <div class="price-side-actions">
-                <button class="btn btn-sm btn-outline toggle-drawer-btn" data-drawer-id="${f.id}" style="flex:1">
-                  ${isDrawerOpen ? '收起官方比价 ▲' : '查看携程与航司官方出票渠道 ▼'}
+              <div class="price-side-actions" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <a href="${getCtripBookingUrl(f)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="text-decoration:none; text-align:center; font-weight:700; background:#2577e3; border:none; display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; border-radius:6px; color:#fff; box-shadow:0 2px 8px rgba(37,119,227,0.3);">
+                  🎟️ 携程官方选座购票 →
+                </a>
+                <button class="btn btn-sm btn-outline toggle-drawer-btn" data-drawer-id="${f.id}" style="width:100%; font-size:11.5px; padding:5px 8px;">
+                  ${isDrawerOpen ? '收起渠道比价 ▲' : '查看航司/Google比价渠道 ▼'}
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- 展开的 6 大平台横向比价与神券叠加公式 -->
+          <!-- 展开的比价渠道 -->
           <div class="platform-drawer ${isDrawerOpen ? 'open' : ''}" id="drawer_${f.id}">
-            <div style="font-size:12.5px;font-weight:700;margin-bottom:6px;color:#93c5fd;">
-              🔍 携程官方实票出票价与航司/国际GDS比价（票面 ¥${f.baseFare} + 税费 ¥${f.taxAmount}）：
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:#93c5fd;">
+              🔍 官方实票出票渠道与比价链接：
             </div>
             <div class="platform-quotes-grid">
-              ${f.allPlatforms
-                .map(
-                  (p, idx) => `
-                  <div class="plat-quote-item ${idx === 0 ? 'winner' : ''}">
-                    <div class="plat-head">
-                      <span>${idx === 0 ? '👑 ' : ''}${p.platformName}</span>
-                      <span class="plat-net-val">${fmtPrice(p.finalNetPrice)}</span>
-                    </div>
-                    <div style="font-size:11.5px;color:#cbd5e1;">
-                      官方含税价 <strong>${fmtPrice(p.finalNetPrice)}</strong>
-                    </div>
-                    <div class="plat-formula">${p.formulaText}</div>
-                  </div>
-                `
-                )
-                .join('')}
+              <div class="plat-quote-item winner">
+                <div class="plat-head">
+                  <span>👑 携程旅行</span>
+                  <span class="plat-net-val">${fmtPrice(f.rawTotalPrice)}</span>
+                </div>
+                <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
+                  官方含税价 <strong>${fmtPrice(f.rawTotalPrice)}</strong>
+                </div>
+                <a href="${getCtripBookingUrl(f)}" target="_blank" rel="noopener" class="plat-book-btn">直达携程预订 →</a>
+              </div>
+
+              <div class="plat-quote-item">
+                <div class="plat-head">
+                  <span>${f.outbound.airlineName || '航司'}官方直销</span>
+                  <span class="plat-net-val">${fmtPrice(f.rawTotalPrice)}</span>
+                </div>
+                <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
+                  航司直营官网/App
+                </div>
+                <a href="${getAirlineOfficialBookingUrl(f)}" target="_blank" rel="noopener" class="plat-book-btn">前往航司官网 →</a>
+              </div>
+
+              <div class="plat-quote-item">
+                <div class="plat-head">
+                  <span>Google Flights</span>
+                  <span class="plat-net-val">${fmtPrice(f.rawTotalPrice)}</span>
+                </div>
+                <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
+                  国际GDS航线比价
+                </div>
+                <a href="${getGoogleFlightsUrl(f)}" target="_blank" rel="noopener" class="plat-book-btn">前往Google比价 →</a>
+              </div>
             </div>
+
+            ${
+              f.tripType === 'open_jaw'
+                ? `
+              <div style="margin-top:12px; padding:10px 14px; background:rgba(30,41,59,0.8); border:1px dashed #38bdf8; border-radius:6px; font-size:12px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                <span style="color:#38bdf8; font-weight:700;">✈️ 开口拆单分段直达链接：</span>
+                <a href="${getCtripOnewayUrl(f.outbound)}" target="_blank" rel="noopener" style="color:#fff; background:#0284c7; padding:3px 8px; border-radius:4px; text-decoration:none;">去程单买 (${f.outbound.fromCity}→${f.outbound.toCity} ¥${f.outbound.oneWayRawPrice}) →</a>
+                <a href="${getCtripOnewayUrl(f.inbound)}" target="_blank" rel="noopener" style="color:#fff; background:#0284c7; padding:3px 8px; border-radius:4px; text-decoration:none;">返程单买 (${f.inbound.fromCity}→${f.inbound.toCity} ¥${f.inbound.oneWayRawPrice}) →</a>
+              </div>
+            `
+                : ''
+            }
           </div>
         </article>
       `;
