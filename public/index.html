@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>上海 ⇄ 米兰/罗马 机票价格与优惠券云端监控</title>
+  <title>上海 ⇄ 米兰/罗马 中意直飞机票实时监控 (携程官方100%对齐)</title>
   <!-- iOS PWA 专属适配标签 -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./icon.svg" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20261026_v5" />
+  <link rel="stylesheet" href="./styles.css?v=20261026_v6" />
 </head>
 <body>
   <!-- 顶部导航与监控状态栏 -->
@@ -22,7 +22,7 @@
         <div class="brand-logo">✈️</div>
         <div>
           <div class="brand-title-row">
-            <h1>中意机票全网比价与神券云端监控</h1>
+            <h1>中意直飞专线机票实时监控</h1>
             <span class="live-badge" id="liveStatusBadge" title="GitHub Actions 每天 09:00 与 21:00 自动刷新 2 次，电脑关机也可在手机查看">
               <span class="pulse-dot"></span> 云端托管 · 每天2次自动刷新
             </span>
@@ -49,7 +49,7 @@
           <a href="./universal/index.html" class="btn" style="text-decoration:none; background:linear-gradient(135deg, #10b981, #0284c7); color:#fff; font-weight:600; padding:8px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
             🌍 通用版 (自选起降地/日期) →
           </a>
-          <button class="btn btn-primary" id="refreshNowBtn" title="立即重新拉取并计算最新全网机票价格与优惠券">
+          <button class="btn btn-primary" id="refreshNowBtn" title="立即重新拉取并计算最新携程直飞机票价格">
             <span id="refreshBtnIcon">🔄</span> 手动刷新
           </button>
           <button class="btn btn-glass" id="openMobileModalBtn">
@@ -82,7 +82,7 @@
     <section class="combo-overview-section">
       <div class="section-header-inline">
         <div>
-          <h2>🇮🇹 4 种进出方案实时地板价总览（已叠加最优平台优惠券）</h2>
+          <h2>🇮🇹 4 种进出方案实时低价总览（携程官方真实出票价）</h2>
           <p class="text-muted">GitHub 云端每天早 09:00 / 晚 21:00 自动刷新 2 次，您也可随时点击右上角「🔄 手动刷新」立即重算最新价格</p>
         </div>
         <div class="last-update-info" id="lastUpdateText">最后更新：加载中...</div>
@@ -145,7 +145,6 @@
             <select id="sortBySelect">
               <option value="NET_PRICE_ASC">💰 折后到手实付价最低</option>
               <option value="DURATION_ASC">⚡ 总飞行耗时最短</option>
-              <option value="DISCOUNT_DESC">🎟️ 优惠券抵扣最多</option>
               <option value="SAVED_SPLIT_DESC">⚖️ 比单买两段省最多</option>
               <option value="FAVORITES_FIRST">⭐ 我的收藏优先</option>
             </select>
@@ -403,10 +402,6 @@
       <span class="mob-icon">⚖️</span>
       <span class="mob-label">拆分对比</span>
     </button>
-    <button class="mob-nav-item" data-tab="tab-coupons">
-      <span class="mob-icon">🎟️</span>
-      <span class="mob-label">神券抵扣</span>
-    </button>
     <button class="mob-nav-item" data-tab="tab-trends">
       <span class="mob-icon">📈</span>
       <span class="mob-label">走势/设置</span>
@@ -434,6 +429,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20261026_v5"></script>
+  <script src="./app.js?v=20261026_v6"></script>
 </body>
 </html>

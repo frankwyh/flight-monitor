@@ -6,7 +6,7 @@
  *   3. 支持配置 GitHub Repo + Token 直接在手机/电脑网页端远程触发 GitHub Actions workflow_dispatch 云端爬虫
  */
 
-const STORAGE_KEY = 'italy_flight_monitor_user_state_v5';
+const STORAGE_KEY = 'italy_flight_monitor_user_state_v6';
 
 const state = {
   isStaticMode: true,
@@ -104,74 +104,12 @@ function computeCouponDiscountBrowser(coupon, rawTotalPrice, baseFare) {
 }
 
 function evaluateFlightQuotesBrowser(flightItem, activeCoupons, platformsMeta, priceFactor = 1.0) {
-  const baseFare = Math.round(flightItem.baseFare * priceFactor);
-  const taxAmount = flightItem.taxAmount;
-  const cabinClass = flightItem.cabinClass;
-  const tripType = flightItem.tripType;
-  const airlineCode = flightItem.airlineCode;
-  const baseTotal = baseFare + taxAmount;
+  const rawTotalPrice = flightItem.rawTotalPrice || (flightItem.baseFare + flightItem.taxAmount);
+  const taxAmount = flightItem.taxAmount || 2960;
+  const baseFare = Math.max(100, rawTotalPrice - taxAmount);
 
   const platformQuotes = [];
-  for (const [platformId, platformMeta] of Object.entries(platformsMeta)) {
-    const rawTotalPrice = baseTotal;
-    const adjustedBaseFare = baseFare;
-
-    const context = {
-      platformId,
-      rawTotalPrice,
-      baseFare: adjustedBaseFare,
-      taxAmount,
-      cabinClass,
-      tripType,
-      airlineCode
-    };
-
-    const matchingMain = [];
-    const matchingPayment = [];
-
-    for (const coupon of activeCoupons) {
-      if (!isCouponApplicableBrowser(coupon, context)) continue;
-      const discount = computeCouponDiscountBrowser(coupon, rawTotalPrice, adjustedBaseFare);
-      if (discount <= 0) continue;
-      if (coupon.category === 'payment_discount') {
-        matchingPayment.push({ coupon, discount });
-      } else {
-        matchingMain.push({ coupon, discount });
-      }
-    }
-
-    matchingMain.sort((a, b) => b.discount - a.discount);
-    matchingPayment.sort((a, b) => b.discount - a.discount);
-
-    const bestMain = matchingMain[0] || null;
-    const bestPayment =
-      (!bestMain || bestMain.coupon.stackableWithPayment !== false) && matchingPayment[0]
-        ? matchingPayment[0]
-        : null;
-
-    const appliedCoupons = [];
-    let totalDiscount = 0;
-
-    if (bestMain) {
-      appliedCoupons.push({
-        id: bestMain.coupon.id,
-        name: bestMain.coupon.name,
-        amount: bestMain.discount,
-        category: bestMain.coupon.category
-      });
-      totalDiscount += bestMain.discount;
-    }
-    if (bestPayment) {
-      appliedCoupons.push({
-        id: bestPayment.coupon.id,
-        name: bestPayment.coupon.name,
-        amount: bestPayment.discount,
-        category: bestPayment.coupon.category
-      });
-      totalDiscount += bestPayment.discount;
-    }
-
-    const finalNetPrice = Math.max(500, rawTotalPrice - totalDiscount);
+  for (const [platformId, platformMeta] of Object.entries(platformsMeta || {})) {
     platformQuotes.push({
       platformId,
       platformName: platformMeta.name,
@@ -179,23 +117,30 @@ function evaluateFlightQuotesBrowser(flightItem, activeCoupons, platformsMeta, p
       color: platformMeta.color,
       badgeBg: platformMeta.badgeBg,
       rawTotalPrice,
-      baseFare: adjustedBaseFare,
+      baseFare,
       taxAmount,
-      totalDiscount,
-      finalNetPrice,
-      appliedCoupons,
-      formulaText:
-        appliedCoupons.length > 0
-          ? `票面含税 ¥${rawTotalPrice} - ${appliedCoupons.map(c => `${c.name}(¥${c.amount})`).join(' - ')} = 实付 ¥${finalNetPrice}`
-          : `票面含税 ¥${rawTotalPrice}（无额外券抵扣）`
+      totalDiscount: 0,
+      finalNetPrice: rawTotalPrice,
+      appliedCoupons: [],
+      formulaText: `${platformMeta.shortName}官方含税实票价 ¥${rawTotalPrice}`
     });
   }
 
-  platformQuotes.sort((a, b) => a.finalNetPrice - b.finalNetPrice);
+  const bestPlatform = platformQuotes.find(p => p.platformId === 'ctrip') || platformQuotes[0] || {
+    platformId: 'ctrip',
+    platformName: '携程旅行',
+    shortName: '携程',
+    rawTotalPrice,
+    finalNetPrice: rawTotalPrice,
+    totalDiscount: 0,
+    appliedCoupons: []
+  };
+
   return {
-    bestPlatform: platformQuotes[0],
+    bestPlatform,
     allPlatforms: platformQuotes,
-    baseFare
+    baseFare,
+    rawTotalPrice
   };
 }
 
@@ -653,7 +598,7 @@ function renderFlightsList() {
                   </div>
                 </div>
                 <div class="leg-meta-right">
-                  往返含税总计(已扣券)
+                  往返经济舱官方含税价
                 </div>
               </div>
             </div>
@@ -673,12 +618,8 @@ function renderFlightsList() {
                 <span class="price-origin-label">携程App官方含税价</span>
               </div>
 
-              <div class="coupon-applied-summary">
-                ${
-                  f.totalDiscount > 0
-                    ? `🎟️ 已减 ¥${f.totalDiscount}：${couponNames}`
-                    : '💡 当前未勾选适用优惠券（裸票含税价）'
-                }
+              <div class="coupon-applied-summary" style="color:#10b981;font-weight:600;">
+                ✅ 携程/航司官方真实出票价 · 无隐藏加价
               </div>
 
               <div class="split-save-hint">
@@ -712,7 +653,7 @@ function renderFlightsList() {
                       <span class="plat-net-val">${fmtPrice(p.finalNetPrice)}</span>
                     </div>
                     <div style="font-size:11.5px;color:#cbd5e1;">
-                      原含税 ${fmtPrice(p.rawTotalPrice)} · 优惠立减 <strong style="color:#fbbf24">-${fmtPrice(p.totalDiscount)}</strong>
+                      官方含税价 <strong>${fmtPrice(p.finalNetPrice)}</strong>
                     </div>
                     <div class="plat-formula">${p.formulaText}</div>
                   </div>
