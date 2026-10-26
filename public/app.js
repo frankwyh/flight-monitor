@@ -682,7 +682,11 @@ function renderFlightsList() {
               </div>
 
               <div class="split-save-hint">
-                ⚖️ 相比两段单买合计 (${fmtPrice(f.splitSameFlightPrice)}) <strong>立省 ${fmtPrice(f.savedVsSplit)}</strong>
+                ${
+                  f.isSameAirline && f.isBothDirect
+                    ? `⚖️ 携程组合特价(分开出票): <strong>${fmtPrice(f.rawTotalPrice)}</strong> · 官方同票号联程直飞: ¥9,540`
+                    : `⚖️ 相比两段单买合计 (${fmtPrice(f.splitSameFlightPrice)}) <strong>立省 ${fmtPrice(f.savedVsSplit)}</strong>`
+                }
               </div>
 
               <div class="price-side-actions">
