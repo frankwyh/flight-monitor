@@ -1,14 +1,14 @@
-name: ✈️ 意大利机票监控 (每天2次自动刷新 + 部署 GitHub Pages)
+name: ✈️ 携程中意直飞价格监控 (云端自动化浏览器巡检 + 真正一键刷新)
 
 on:
-  # 每天自动刷新 2 次：UTC 01:00 (北京时间 09:00) 与 UTC 13:00 (北京时间 21:00)
+  # 云端全自动无人值守监控：每 3 小时自动启动 Playwright 自动化浏览器抓取最新价格并部署
   schedule:
-    - cron: '0 1,13 * * *'
+    - cron: '0 */3 * * *'
 
-  # 支持手动触发刷新 (GitHub 页面或网页端 API 调用)
+  # 支持网页端/GitHub 页面一键触发真刷新
   workflow_dispatch:
 
-  # 代码推送时自动更新
+  # 代码推送时自动运行
   push:
     branches:
       - main
@@ -38,24 +38,26 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: 📦 安装抓取与依赖包
-        run: npm ci || npm install
+      - name: 📦 安装依赖包与云端自动化浏览器 (Playwright Chromium)
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
 
-      - name: 🔄 执行机票价格抓取与神券重算 (更新最新运价数据)
+      - name: 🔄 运行自动化浏览器抓取携程最新真实运价
         env:
           BARK_PUSH_URL: ${{ secrets.BARK_PUSH_URL }}
         run: node scripts/update-data.js
 
-      - name: 💾 提交最新价格走势与静态文件回仓库
+      - name: 💾 提交最新真实价格快照回仓库
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --staged --quiet || git commit -m "chore(data): 自动更新 4/10-4/24 中意机票价格快照 [skip ci]"
+          git diff --staged --quiet || git commit -m "chore(data): 云端自动化浏览器更新携程直飞最新票价 [skip ci]"
           git push || true
 
-      - name: 🌐 配置 GitHub Pages (若已在 Settings->Pages 开启则自动发布)
+      - name: 🌐 配置 GitHub Pages
         id: pages_cfg
         continue-on-error: true
         uses: actions/configure-pages@v5
@@ -67,7 +69,7 @@ jobs:
         with:
           path: './public'
 
-      - name: 🚀 发布到 GitHub Pages
+      - name: 🚀 发布部署至 GitHub Pages
         if: steps.pages_cfg.outcome == 'success'
         continue-on-error: true
         id: deployment

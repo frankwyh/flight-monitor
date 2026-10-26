@@ -1290,103 +1290,74 @@ function bindEvents() {
     });
   });
 
-  // ==================== 顶部「🔄 手动刷新」真抓取处理流程 ====================
+  // ==================== 顶部「⚡ 一键刷新」云端自动化浏览器真抓取流程 ====================
   async function executeRealScrapeFlow() {
     const btn = document.getElementById('refreshNowBtn');
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '3080';
-
-    if (isLocal) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spin">🔄</span> 正在启动本地 Chrome 爬虫抓取携程最新真价格...';
-      try {
-        const localRes = await fetch('/api/refresh', { method: 'POST', cache: 'no-store' });
-        if (localRes.ok) {
-          const resData = await localRes.json();
-          if (resData && resData.snapshot) {
-            state.baseSnapshot = resData.snapshot;
-            if (resData.priceHistory) state.priceHistory = resData.priceHistory;
-            recalculateSnapshotInBrowser(1.0, true);
-            renderAll();
-            showRefreshToast('<span>✅ <strong>本地爬虫抓取成功！</strong> 已同步携程最新真实直飞出票价！</span>');
-            return;
-          }
-        }
-        throw new Error('本地服务返回异常');
-      } catch (err) {
-        alert('本地爬虫执行失败: ' + err.message + '\n请确认已通过【启动本地实时监控.bat】启动服务！');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
-      }
-      return;
-    }
-
-    // 处于纯静态 GitHub Pages 环境
-    const ghToken = (state.settings.ghToken || localStorage.getItem('flight_gh_token') || '').trim();
     const repo = (state.settings.ghRepo || detectGitHubRepoFromUrl() || 'frankwyh/flight-monitor').trim();
+    const ghToken = (state.settings.ghToken || localStorage.getItem('flight_gh_token') || '').trim();
 
-    if (!ghToken) {
-      // 弹出真实抓取指引弹窗，绝不展示虚假刷新提示
-      const modal = document.getElementById('refreshGuideModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        const tokenInput = document.getElementById('modalGhTokenInput');
-        if (tokenInput) tokenInput.value = '';
+    // 1. 若配置了 GitHub Token，直接在网页内一键调度云端自动化浏览器
+    if (ghToken) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin">🔄</span> 云端自动化浏览器开机抓取中...';
+      showRefreshToast('<span>🚀 <strong>已向云端发送调度指令！</strong> GitHub Actions 正在启动 Playwright 自动化浏览器抓取携程最新真价格（预计耗时 40~50 秒）...</span>');
+
+      try {
+        const triggerRes = await triggerGitHubWorkflowDispatch();
+        if (!triggerRes.ok) {
+          alert('云端调度失败: ' + triggerRes.reason);
+          btn.disabled = false;
+          btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+          return;
+        }
+
+        // 轮询等待云端自动化浏览器抓取完成
+        let attempts = 0;
+        const maxAttempts = 18; // 18 * 4s = 72s
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          btn.innerHTML = `<span class="spin">🔄</span> 自动化浏览器抓取中 (${attempts * 4}s)...`;
+          try {
+            const runsRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=1`, {
+              headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' }
+            });
+            if (runsRes.ok) {
+              const runsData = await runsRes.json();
+              const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
+              if (latestRun && latestRun.status === 'completed') {
+                clearInterval(pollInterval);
+                await loadDashboard(true);
+                recalculateSnapshotInBrowser(1.0, true);
+                renderAll();
+                btn.disabled = false;
+                btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+                showRefreshToast('<span>✅ <strong>云端自动化浏览器抓取完成！</strong> 携程最新真实直飞出票价已同步至网页！</span>');
+                return;
+              }
+            }
+          } catch (e) {}
+
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            btn.disabled = false;
+            btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+            showRefreshToast('<span>⏳ 云端任务正在执行，数据即将就绪，您稍后刷新页面即可查看！</span>');
+          }
+        }, 4000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+        alert('触发云端抓取异常: ' + err.message);
       }
       return;
     }
 
-    // 已有 Token，触发 GitHub Actions 云端调度
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin">🔄</span> 云端 GitHub Actions 开机抓取中...';
-    showRefreshToast('<span>🚀 <strong>已向 GitHub Actions 发送调度指令！</strong> 云端服务器正在启动 Chrome 抓取携程最新票价（预计耗时 40~50 秒）...</span>');
-
-    try {
-      const triggerRes = await triggerGitHubWorkflowDispatch();
-      if (!triggerRes.ok) {
-        alert('云端调度失败: ' + triggerRes.reason);
-        btn.disabled = false;
-        btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
-        return;
-      }
-
-      // 轮询等待 GitHub Actions 运行完成
-      let attempts = 0;
-      const maxAttempts = 18; // 18 * 4s = 72s
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        btn.innerHTML = `<span class="spin">🔄</span> 云端抓取中 (${attempts * 4}s)...`;
-        try {
-          const runsRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=1`, {
-            headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' }
-          });
-          if (runsRes.ok) {
-            const runsData = await runsRes.json();
-            const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
-            if (latestRun && latestRun.status === 'completed') {
-              clearInterval(pollInterval);
-              await loadDashboard(true);
-              recalculateSnapshotInBrowser(1.0, true);
-              renderAll();
-              btn.disabled = false;
-              btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
-              showRefreshToast('<span>✅ <strong>云端真抓取已完成！</strong> GitHub Actions 已同步最新携程票价至网页！</span>');
-              return;
-            }
-          }
-        } catch (e) {}
-
-        if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          btn.disabled = false;
-          btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
-          showRefreshToast('<span>⏳ 云端任务正在执行，数据即将就绪，您稍后刷新页面即可查看！</span>');
-        }
-      }, 4000);
-    } catch (err) {
-      btn.disabled = false;
-      btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
-      alert('触发云端抓取异常: ' + err.message);
+    // 2. 未配置 Token 时，打开云端一键真刷新面板 (提供直达 GitHub Run workflow 按钮与免跳转 Token 输入)
+    const modal = document.getElementById('refreshGuideModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      const tokenInput = document.getElementById('modalGhTokenInput');
+      if (tokenInput) tokenInput.value = '';
     }
   }
 

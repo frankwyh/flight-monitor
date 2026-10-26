@@ -24,7 +24,7 @@
           <div class="brand-title-row">
             <h1>中意直飞专线机票实时监控</h1>
             <span class="live-badge" id="liveStatusBadge" title="GitHub Actions 每天 09:00 与 21:00 自动刷新 2 次，电脑关机也可在手机查看">
-              <span class="pulse-dot"></span> 云端托管 · 每天2次自动刷新
+              <span class="pulse-dot"></span> 云端自动化浏览器监控 · 每3小时全自动巡检
             </span>
           </div>
           <p class="brand-subtitle" id="routeHeaderDesc">
@@ -49,8 +49,8 @@
           <a href="./universal/index.html" class="btn" style="text-decoration:none; background:linear-gradient(135deg, #10b981, #0284c7); color:#fff; font-weight:600; padding:8px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
             🌍 通用版 (自选起降地/日期) →
           </a>
-          <button class="btn btn-primary" id="refreshNowBtn" title="立即重新拉取并计算最新携程直飞机票价格">
-            <span id="refreshBtnIcon">🔄</span> 手动刷新
+          <button class="btn btn-primary" id="refreshNowBtn" title="一键调用云端自动化浏览器抓取携程最新真实直飞价格">
+            <span id="refreshBtnIcon">⚡</span> 一键刷新
           </button>
           <button class="btn btn-glass" id="openMobileModalBtn">
             📱 iOS手机二维码
@@ -429,48 +429,57 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20261026_v10"></script>
+  <script src="./app.js?v=20261026_v11"></script>
 
-  <!-- 真实机票抓取模式与云端配置弹窗 -->
+  <!-- 云端自动化浏览器一键刷新弹窗 -->
   <div class="modal-backdrop hidden" id="refreshGuideModal">
-    <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-card" style="max-width: 580px;">
       <div class="modal-header">
-        <h3 style="display:flex; align-items:center; gap:8px;">🔄 携程真实机票抓取说明</h3>
+        <h3 style="display:flex; align-items:center; gap:8px;">⚡ 自动化浏览器云端一键真刷新</h3>
         <button class="modal-close" id="closeRefreshGuideBtn">✕</button>
       </div>
       <div class="modal-body" style="line-height:1.6; font-size:13.5px;">
-        <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:12px 14px; margin-bottom:16px;">
-          <strong style="color:#38bdf8;">💡 运行环境提示：</strong><br/>
-          您当前正在访问 GitHub Pages 静态网页。根据浏览器沙箱安全机制，纯静态网页无法直接在您的电脑上唤起本地 Chrome 浏览器爬虫。为您提供两种 100% 真实的抓取方式：
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:12px 14px; margin-bottom:16px;">
+          <strong style="color:#34d399;">🤖 全自动化浏览器抓取引擎已就绪：</strong><br/>
+          已配置 GitHub Actions 云端服务器（Ubuntu + Playwright Chromium）。无需在本地电脑运行任何命令或批处理，全部由云端自动化浏览器直接抓取携程最新真实直飞出票价！
         </div>
 
-        <div style="margin-bottom:16px; padding:12px 14px; background:rgba(30,41,59,0.7); border-radius:8px; border-left:4px solid #10b981;">
-          <div style="font-weight:700; color:#34d399; margin-bottom:6px; font-size:14px;">方案一：电脑本地一键真抓取（零门槛 · 最推荐）</div>
-          <div style="color:#cbd5e1; font-size:12.5px; line-height:1.7;">
-            在您的电脑上直接双击项目根目录的批处理文件：<br/>
-            👉 <code style="background:#0f172a; padding:2px 6px; border-radius:4px; color:#38bdf8; font-weight:700;">一键抓取最新机票.bat</code><br/>
-            <span style="color:#94a3b8;">（约20秒启动真实 Chrome 抓取携程并自动提交推送到本网页）</span><br/>
-            👉 或运行 <code style="background:#0f172a; padding:2px 6px; border-radius:4px; color:#38bdf8; font-weight:700;">启动本地实时监控.bat</code>，打开 <strong>http://localhost:3080</strong>，即可在网页端点击「手动刷新」实时启动 Chrome 抓取！
-          </div>
+        <!-- 方式一：免配置 Token，一键直达 GitHub 调度运行 -->
+        <div style="margin-bottom:16px; padding:14px; background:rgba(30,41,59,0.7); border-radius:8px; border-left:4px solid #10b981;">
+          <div style="font-weight:700; color:#34d399; margin-bottom:6px; font-size:14px;">方式一：一键直达 GitHub 调度运行 (零门槛 · 推荐)</div>
+          <p style="color:#cbd5e1; font-size:12.5px; margin-bottom:12px;">
+            点击下方按钮直达 GitHub Actions 官方调度页面，点击页面绿色的 <strong>【Run workflow】</strong> 按钮，云端服务器立即开机启动 Playwright 自动化浏览器抓取携程最新真价格并自动部署到本网页！
+          </p>
+          <a href="https://github.com/frankwyh/flight-monitor/actions/workflows/flight-monitor.yml" target="_blank" rel="noopener" class="btn btn-primary" style="display:flex; align-items:center; justify-content:center; gap:6px; background:#10b981; border:none; padding:10px 16px; border-radius:6px; color:#fff; text-decoration:none; font-weight:700; font-size:13px; box-shadow:0 2px 8px rgba(16,185,129,0.3);">
+            🚀 直达 GitHub Actions 点击【Run workflow】立即抓取 →
+          </a>
         </div>
 
-        <div style="padding:12px 14px; background:rgba(30,41,59,0.7); border-radius:8px; border-left:4px solid #3b82f6;">
-          <div style="font-weight:700; color:#60a5fa; margin-bottom:6px; font-size:14px;">方案二：配置 GitHub Token 云端一键真抓取（手机/在外可用）</div>
+        <!-- 方式二：在网页内免跳转一键刷新 -->
+        <div style="padding:14px; background:rgba(30,41,59,0.7); border-radius:8px; border-left:4px solid #3b82f6;">
+          <div style="font-weight:700; color:#60a5fa; margin-bottom:6px; font-size:14px;">方式二：在网页内免跳转一键刷新 (配置一次 Token)</div>
           <div style="color:#cbd5e1; font-size:12.5px; margin-bottom:10px;">
-            在下方填入您的 GitHub Personal Access Token (仅需 workflow 权限)，点击「手动刷新」即可直接在手机 Safari 或任何浏览器上一键唤起 GitHub 云端服务器自动开机抓取最新价格并部署更新！
+            在下方保存您的 GitHub Personal Access Token (仅需 workflow 权限)。保存后，在任何设备（包括手机 Safari）点击「一键刷新」即可直接在当前网页触发云端自动化浏览器抓取，无需跳转！
           </div>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <input type="password" id="modalGhTokenInput" placeholder="输入 GitHub Token (ghp_...)" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:8px 12px; border-radius:6px; font-size:12.5px;" />
             <div style="display:flex; gap:10px; align-items:center;">
               <button class="btn btn-primary" id="saveTokenAndTriggerBtn" style="padding:7px 14px; font-size:12.5px;">
-                🚀 保存并立即启动云端抓取
+                ⚡ 保存并立即在网页端真抓取
               </button>
               <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Flight+Monitor+Trigger" target="_blank" rel="noopener" style="color:#38bdf8; font-size:12px; text-decoration:none;">
-                🔑 去 GitHub 申请 Token →
+                🔑 去 GitHub 生成 Token (免去复杂操作) →
               </a>
             </div>
           </div>
         </div>
+
+        <div style="margin-top:14px; font-size:12px; color:#94a3b8; text-align:center;">
+          ⏱️ <strong>全天候无人值守：</strong>云端自动化浏览器已配置为每 3 小时全自动巡检一次，数据始终保持最新。
+        </div>
+      </div>
+    </div>
+  </div>
       </div>
     </div>
   </div>

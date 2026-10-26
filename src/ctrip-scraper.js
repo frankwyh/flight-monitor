@@ -1,3 +1,4 @@
+const fs = require('fs');
 /**
  * 携程中意直飞专线 Playwright 真实出票价抓取引擎 (穿透 WhaleGuard)
  * 严格遵循真实商业出票规则：
@@ -43,6 +44,7 @@ const VERIFIED_FALLBACK_PRICES = {
  */
 async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-04-24') {
   console.log(`🚀 [Ctrip Scraper] 启动本地真实 Chrome 抓取携程直飞专线 (闭口往返 + 开口单程) (${outDate} / ${inDate})...`);
+  let browser = null;
   let context = null;
   const results = {
     oneway: { ...VERIFIED_FALLBACK_PRICES.oneway },
@@ -50,20 +52,39 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
   };
 
   try {
-    context = await chromium.launchPersistentContext(USER_DATA_DIR, {
-      executablePath: CHROME_PATH,
-      headless: false,
-      args: [
-        '--disable-blink-features=AutomationControlled',
-        '--no-sandbox',
-        '--disable-infobars',
-        '--window-size=1280,800'
-      ],
-      ignoreDefaultArgs: ['--enable-automation'],
-      viewport: { width: 1280, height: 800 },
-      locale: 'zh-CN',
-      timezoneId: 'Asia/Shanghai'
-    });
+    const isWindows = process.platform === 'win32';
+    const hasLocalChrome = isWindows && fs.existsSync(CHROME_PATH);
+    const launchArgs = [
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-infobars',
+      '--disable-dev-shm-usage',
+      '--window-size=1280,800'
+    ];
+
+    if (hasLocalChrome) {
+      context = await chromium.launchPersistentContext(USER_DATA_DIR, {
+        executablePath: CHROME_PATH,
+        headless: false,
+        args: launchArgs,
+        ignoreDefaultArgs: ['--enable-automation'],
+        viewport: { width: 1280, height: 800 },
+        locale: 'zh-CN',
+        timezoneId: 'Asia/Shanghai'
+      });
+    } else {
+      browser = await chromium.launch({
+        headless: true,
+        args: launchArgs
+      });
+      context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        viewport: { width: 1280, height: 800 },
+        locale: 'zh-CN',
+        timezoneId: 'Asia/Shanghai'
+      });
+    }
 
     const page = context.pages()[0] || await context.newPage();
 
@@ -138,6 +159,9 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
   } finally {
     if (context) {
       await context.close().catch(() => {});
+    }
+    if (browser) {
+      await browser.close().catch(() => {});
     }
   }
 }
