@@ -1603,7 +1603,8 @@ function bindEvents() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    // Service worker disabled to prevent caching
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
   });
 }
 
