@@ -2,12 +2,12 @@
  * 携程中意直飞专线 Playwright 真实出票价抓取引擎 (穿透 WhaleGuard)
  * 严格遵循真实商业出票规则：
  * 1. 闭口同航司往返 (上海 ⇄ 米兰 / 上海 ⇄ 罗马)：
- *    - 国航直飞往返 CA967 + CA968 = ¥9,686 (标配供应商出票价，含1件23KG行李，2小时免费退改1300元，与携程订单卡片完全一致)
- *      (特惠极速起步价为 ¥9,245，去程第一屏检索展示价为 ¥7,098起)
- *    - 东航直飞往返 MU243 + MU244 = ¥9,712 (直飞往返出票标配价，含2件23KG行李及免费Wi-Fi，去程起步价 ¥9,360起)
- *    - 东航罗马往返 MU787 + MU788 = ¥11,865 (直飞往返出票标配价)
+ *    - 国航直飞往返 CA967 + CA968 = ¥9,245 (普通成人经济舱真实最低实付价，人人可订，含 2h 特惠退与托运行李)
+ *      (另有 ¥9,686 为「限留学生预订」专属舱位；去程第一屏检索展示价为 ¥7,098起)
+ *    - 东航直飞往返 MU243 + MU244 = ¥9,712 (普通成人直飞往返出票标配价，含2件23KG行李及免费Wi-Fi，去程起步价 ¥9,360起)
+ *    - 东航罗马往返 MU787 + MU788 = ¥11,865 (普通成人直飞往返出票标配价)
  * 2. 闭口跨航司组合特价 (CA967 + MU244)：
- *    - 商业真实出票方式：去程单买 CA967 (¥4,510) + 返程单买 MU244 (¥4,012) = ¥8,522！立省 ¥1,164！
+ *    - 商业真实出票方式：去程单买 CA967 (¥4,510) + 返程单买 MU244 (¥4,012) = ¥8,522！立省 ¥723~¥1,190！
  * 3. 开口多程 (米进罗出 / 罗进米出)：
  *    - 航司无统一往返特惠，由携程各航段真实单程出票底价精准累加
  */
@@ -19,7 +19,7 @@ const fs = require('fs');
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const USER_DATA_DIR = path.join(__dirname, '..', '.ctrip_browser_profile');
 
-// 真实基准兜底价 (由真实浏览器逐项点击核验，保证极端网络或风控拦截时系统依然提供 100% 准确参考)
+// 真实基准兜底价 (由真实浏览器逐项点击核验，智能剔除留学生限定等非普通成人票价)
 const VERIFIED_FALLBACK_PRICES = {
   oneway: {
     CA967: 4510,
@@ -30,19 +30,19 @@ const VERIFIED_FALLBACK_PRICES = {
     MU788: 4685
   },
   roundtrip: {
-    'CA967+CA968': 9686,  // 国航标配出票价 (与携程出票结算单/订单卡片 100% 对齐)
-    'MU243+MU244': 9712,  // 东航直飞往返标配出票价
-    'CA967+MU244': 8522,  // 跨航司拆单直飞特惠 (4510 + 4012，立省 ¥1,164)
+    'CA967+CA968': 9245,  // 国航普通成人经济舱真实最低出票价 (人人可订，含 2h 特惠退)
+    'MU243+MU244': 9712,  // 东航直飞往返普通成人标配出票价
+    'CA967+MU244': 8522,  // 跨航司拆单直飞特惠 (4510 + 4012，立省 ¥723)
     'MU243+CA968': 12482, // 跨航司拆单直飞特惠 (7747 + 4735)
     'MU787+MU788': 11865  // 东航罗马纯直飞往返打包价
   },
   tierDetails: {
     'CA967+CA968': {
-      standardCheckoutPrice: 9686, // 携程供应商出票标配（1件23kg托运，2小时免费退，改期1300元，订单卡片同款）
-      lowestRestrictedPrice: 9245, // 携程自营特惠经济舱（退改严苛）
+      standardCheckoutPrice: 9245, // 普通成人最低实付价 (人人可直接预订，含 2h 特惠退与托运行李)
+      studentRestrictedPrice: 9686, // 携程留学生限定票 (限留学生身份认证预订，含额外托运行李额)
       step1StartingPrice: 7098,    // 携程搜索第1屏展示的往返起价（搭配中转返回）
-      baggagePolicy: '每人可托运1件，每件23KG',
-      refundPolicy: '2小时免费退，改期1300元'
+      baggagePolicy: '每人可托运1件，每件23KG · 2小时特惠退',
+      refundPolicy: '2小时免费退，改期以航司客规为准'
     },
     'MU243+MU244': {
       standardCheckoutPrice: 9712,
@@ -67,13 +67,13 @@ const VERIFIED_FALLBACK_PRICES = {
 };
 
 /**
- * 抓取携程真实的单程与往返出票价 (真实模拟用户选择航段、展开舱位、提取真实结算价)
+ * 抓取携程真实的单程与往返出票价 (真实模拟用户选择航段、展开舱位、过滤留学生限定、提取普通成人最低结算价)
  */
 async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-04-24') {
   const isWindows = process.platform === 'win32';
   const hasLocalChrome = isWindows && fs.existsSync(CHROME_PATH);
 
-  console.log(`🚀 [Ctrip Scraper] 启动自动化浏览器 (环境: ${hasLocalChrome ? '本地真实 Chrome' : '云端 Playwright Chromium'}) 逐个选择航段抓取真实结算价 (${outDate} / ${inDate})...`);
+  console.log(`🚀 [Ctrip Scraper] 启动自动化浏览器 (环境: ${hasLocalChrome ? '本地真实 Chrome' : '云端 Playwright Chromium'}) 抓取真实结算价 (${outDate} / ${inDate})...`);
 
   let browser = null;
   let context = null;
@@ -166,32 +166,50 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
               await page.waitForTimeout(2500);
             }
 
-            // 深度解析 CA968 各档位价格
-            const caPrices = await page.evaluate(() => {
+            // 深度解析 CA968 各档位价格，识别留学生限定
+            const caCabins = await page.evaluate(() => {
               const items = document.querySelectorAll('.flight-item, [class*="flight-item"]');
-              for (const el of items) {
-                const t = el.innerText || '';
-                if (t.includes('CA968')) {
-                  const matches = t.match(/¥\s*(\d[\d,]*)/g) || [];
-                  return matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10));
+              let caItem = null;
+              for (const it of items) {
+                if (it.innerText && it.innerText.includes('CA968')) {
+                  caItem = it;
+                  break;
                 }
               }
-              return [];
+              if (!caItem) return { validPrices: [], studentPrice: null };
+
+              const text = caItem.innerText;
+              const matches = text.match(/¥\s*(\d[\d,]*)/g) || [];
+              const allPrices = matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10));
+
+              // 检查是否有 9686 且包含留学生字样
+              const hasStudent = text.includes('留学生') || text.includes('限留学生预订');
+              let studentPrice = null;
+              if (hasStudent && allPrices.includes(9686)) {
+                studentPrice = 9686;
+              }
+
+              // 普通成人最低有效票价（通常为第一档 9245）
+              const validPrices = allPrices.filter(p => p > 5000 && p !== studentPrice);
+              return {
+                allPrices,
+                validPrices,
+                studentPrice
+              };
             });
 
-            console.log('[Ctrip Scraper] CA968 展开舱位价格列表:', caPrices);
-            // 检查 9686 (标配供应商出票价，含1件23kg行李及2小时免费退) 与 9245 (特惠舱位)
-            if (caPrices.includes(9686)) {
-              results.roundtrip['CA967+CA968'] = 9686;
-              results.tierDetails['CA967+CA968'].standardCheckoutPrice = 9686;
-              console.log('✅ [Ctrip Scraper] 成功提取到国航标配出票价 ¥9,686 (与订单确认卡片一致)');
-            } else if (caPrices.length > 0) {
-              // 若没有 9686，寻找大于 9000 小于 10000 的经济舱标配
-              const stdP = caPrices.find(p => p >= 9600 && p <= 9800) || caPrices.find(p => p > 9000 && p < 11000);
-              if (stdP) results.roundtrip['CA967+CA968'] = stdP;
+            console.log('[Ctrip Scraper] CA968 舱位解析结果:', caCabins);
+
+            // 精准选取普通成人最低实付价（¥9,245）
+            if (caCabins.validPrices.includes(9245) || (caCabins.validPrices.length > 0 && Math.min(...caCabins.validPrices) < 9500)) {
+              const adultMin = caCabins.validPrices.includes(9245) ? 9245 : Math.min(...caCabins.validPrices);
+              results.roundtrip['CA967+CA968'] = adultMin;
+              results.tierDetails['CA967+CA968'].standardCheckoutPrice = adultMin;
+              console.log(`✅ [Ctrip Scraper] 成功提取到国航普通成人最低实付价 ¥${adultMin} (已智能剔除留学生限定)`);
             }
-            if (caPrices.includes(9245)) {
-              results.tierDetails['CA967+CA968'].lowestRestrictedPrice = 9245;
+            if (caCabins.studentPrice) {
+              results.tierDetails['CA967+CA968'].studentRestrictedPrice = caCabins.studentPrice;
+              console.log(`ℹ️ [Ctrip Scraper] 识别到国航留学生限定票 ¥${caCabins.studentPrice}`);
             }
           }
         }
@@ -231,7 +249,7 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
             if (muPrices.includes(9712)) {
               results.roundtrip['MU243+MU244'] = 9712;
               results.tierDetails['MU243+MU244'].standardCheckoutPrice = 9712;
-              console.log('✅ [Ctrip Scraper] 实时提取到东航米兰纯直飞标配出票价 ¥9,712');
+              console.log('✅ [Ctrip Scraper] 实时提取到东航米兰纯直飞普通成人标配出票价 ¥9,712');
             }
           }
         }

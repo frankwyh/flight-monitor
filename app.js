@@ -751,13 +751,13 @@ function renderFlightsList() {
 
               ${f.tierDetails ? `
                 <div style="font-size:11px; line-height:1.45; color:#94a3b8; margin: 3px 0 5px 0; background:rgba(15,23,42,0.6); padding:4px 8px; border-radius:4px; border:1px solid #334155;">
-                  <span style="color:#34d399; font-weight:700;">标配出票实付: ¥${f.tierDetails.standardCheckoutPrice.toLocaleString('zh-CN')}</span>
-                  ${f.tierDetails.lowestRestrictedPrice ? `<br><span style="color:#94a3b8;">特惠包起步: ¥${f.tierDetails.lowestRestrictedPrice.toLocaleString('zh-CN')}</span>` : ''}
+                  <span style="color:#34d399; font-weight:700;">普通成人最低实付: ¥${f.tierDetails.standardCheckoutPrice.toLocaleString('zh-CN')}</span> (人人可订 · 2h特惠退)
+                  ${f.tierDetails.studentRestrictedPrice ? `<br><span style="color:#f59e0b;">🎓 留学生限定包: ¥${f.tierDetails.studentRestrictedPrice.toLocaleString('zh-CN')}</span> <span style="color:#64748b;">(需学生认证，托运更多行李)</span>` : ''}
                   ${f.step1StartingPrice ? ` · <span style="color:#64748b;">(首屏起价: ¥${f.step1StartingPrice.toLocaleString('zh-CN')}起)</span>` : ''}
                 </div>
               ` : `
                 <div class="coupon-applied-summary" style="color:#10b981;font-weight:600;">
-                  ✅ 携程官方真实出票结算价 · 无隐藏加价
+                  ✅ 携程官方普通成人最低结算价 · 无特殊身份限制
                 </div>
               `}
 
@@ -808,19 +808,19 @@ function renderFlightsList() {
                 f.tierDetails ? `
                   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:10px; margin-bottom:12px;">
                     <div style="padding:10px; background:rgba(15,23,42,0.85); border-radius:6px; border:1px solid #10b981; border-left:4px solid #10b981;">
-                      <div style="color:#34d399; font-weight:700; font-size:13px;">✅ 携程标配出票价 (真实订单结算单同款)</div>
-                      <div style="font-size:19px; font-weight:800; color:#fbbf24; margin:4px 0;">¥${f.tierDetails.standardCheckoutPrice.toLocaleString('zh-CN')} <span style="font-size:11px; font-weight:normal; color:#94a3b8;">(单成人含税价)</span></div>
-                      <div style="color:#cbd5e1; font-size:11.5px;">• 托运行李：${f.tierDetails.baggagePolicy || '每人可托运1件，每件23KG'}</div>
-                      <div style="color:#cbd5e1; font-size:11.5px;">• 退改规则：${f.tierDetails.refundPolicy || '2小时免费退，改期1300元'}</div>
-                      <div style="color:#cbd5e1; font-size:11.5px;">• 出票渠道：携程官方认证供应商 ("供" 标识)</div>
+                      <div style="color:#34d399; font-weight:700; font-size:13px;">✅ 普通成人最低出票价 (人人可订 · 无身份门槛)</div>
+                      <div style="font-size:19px; font-weight:800; color:#34d399; margin:4px 0;">¥${f.tierDetails.standardCheckoutPrice.toLocaleString('zh-CN')} <span style="font-size:11px; font-weight:normal; color:#94a3b8;">(单成人含税价)</span></div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 预订资格：<strong>普通旅客均可直接预订，无需任何认证</strong></div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 政策包含：${f.tierDetails.baggagePolicy || '经济舱托运行李 · 2小时特惠退'}</div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 出票渠道：携程官方直售基础经济舱</div>
                     </div>
-                    ${f.tierDetails.lowestRestrictedPrice ? `
-                    <div style="padding:10px; background:rgba(15,23,42,0.85); border-radius:6px; border:1px solid #475569; border-left:4px solid #64748b;">
-                      <div style="color:#94a3b8; font-weight:700; font-size:13px;">ℹ️ 携程自营极简特惠包 (退改较严)</div>
-                      <div style="font-size:19px; font-weight:800; color:#94a3b8; margin:4px 0;">¥${f.tierDetails.lowestRestrictedPrice.toLocaleString('zh-CN')} <span style="font-size:11px; font-weight:normal; color:#64748b;">(单成人含税价)</span></div>
-                      <div style="color:#94a3b8; font-size:11.5px;">• 舱位特征：携程平台特惠经济舱起步价</div>
-                      <div style="color:#94a3b8; font-size:11.5px;">• 限制条件：退改门槛较高，限额出票</div>
-                      ${f.step1StartingPrice ? `<div style="color:#94a3b8; font-size:11.5px;">• 携程搜索第1屏起步价：¥${f.step1StartingPrice}起 (搭配转机返回)</div>` : ''}
+                    ${f.tierDetails.studentRestrictedPrice ? `
+                    <div style="padding:10px; background:rgba(15,23,42,0.85); border-radius:6px; border:1px solid #d97706; border-left:4px solid #f59e0b;">
+                      <div style="color:#fbbf24; font-weight:700; font-size:13px;">🎓 携程留学生限定票 (特定资质专享)</div>
+                      <div style="font-size:19px; font-weight:800; color:#fbbf24; margin:4px 0;">¥${f.tierDetails.studentRestrictedPrice.toLocaleString('zh-CN')} <span style="font-size:11px; font-weight:normal; color:#94a3b8;">(单成人含税价)</span></div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 预订限制：<strong>必须通过留学生身份认证</strong>（如学生签证/录取通知书）</div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 权益差异：享有额外托运行李额度（比普通成人票多一件）</div>
+                      <div style="color:#94a3b8; font-size:11px; margin-top:2px;">💡 普通成人直接选择左侧 ¥${f.tierDetails.standardCheckoutPrice} 即可，价格更低且人人可购！</div>
                     </div>
                     ` : ''}
                   </div>
