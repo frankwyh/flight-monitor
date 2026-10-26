@@ -754,9 +754,30 @@ function renderFlightsList() {
               </div>
 
               <div class="price-side-actions" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                <a href="${getCtripBookingUrl(f)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="text-decoration:none; text-align:center; font-weight:700; background:#2577e3; border:none; display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; border-radius:6px; color:#fff; box-shadow:0 2px 8px rgba(37,119,227,0.3);">
-                  🎟️ 携程官方选座购票 →
-                </a>
+                ${
+                  !f.isSameAirline || f.tripType === 'open_jaw'
+                    ? `
+                  <div style="display:flex; flex-direction:column; gap:5px;">
+                    <a href="${getCtripOnewayUrl(f.outbound)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="text-decoration:none; text-align:center; font-weight:700; background:#0284c7; border:none; display:flex; align-items:center; justify-content:center; gap:4px; padding:7px 10px; border-radius:6px; color:#fff; font-size:12px; box-shadow:0 2px 6px rgba(2,132,199,0.3);">
+                      🛫 去程直买：${f.outbound.flightNo} (¥${f.outbound.oneWayRawPrice}) →
+                    </a>
+                    <a href="${getCtripOnewayUrl(f.inbound)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="text-decoration:none; text-align:center; font-weight:700; background:#0284c7; border:none; display:flex; align-items:center; justify-content:center; gap:4px; padding:7px 10px; border-radius:6px; color:#fff; font-size:12px; box-shadow:0 2px 6px rgba(2,132,199,0.3);">
+                      🛬 返程直买：${f.inbound.flightNo} (¥${f.inbound.oneWayRawPrice}) →
+                    </a>
+                  </div>
+                  <div style="font-size:11px; color:#f59e0b; line-height:1.3; margin-top:2px;">
+                    ⚠️ 跨航司/开口程请分别点击上方单买 (实付 ¥${f.finalNetPrice})
+                  </div>
+                `
+                    : `
+                  <a href="${getCtripBookingUrl(f)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="text-decoration:none; text-align:center; font-weight:700; background:#2577e3; border:none; display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; border-radius:6px; color:#fff; box-shadow:0 2px 8px rgba(37,119,227,0.3);">
+                    🎟️ 携程官方往返打包直订 →
+                  </a>
+                  <div style="font-size:11px; color:#94a3b8; line-height:1.3; margin-top:2px;">
+                    💡 去程第1屏展示起价「¥${f.outbound.flightNo === 'CA967' ? '7,098起' : '9,360起'}」，选定直飞返程后总价即为 ¥${f.finalNetPrice}
+                  </div>
+                `
+                }
                 <button class="btn btn-sm btn-outline toggle-drawer-btn" data-drawer-id="${f.id}" style="width:100%; font-size:11.5px; padding:5px 8px;">
                   ${isDrawerOpen ? '收起行程明细 ▲' : '📋 查看真实出票与分段购票明细 ▼'}
                 </button>
