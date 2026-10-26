@@ -1,3 +1,23 @@
+function getGitHubToken() {
+  return (localStorage.getItem('flight_gh_token') || (state.settings && state.settings.ghToken) || '').trim();
+}
+
+function setGitHubToken(token) {
+  const clean = (token || '').trim();
+  if (!state.settings) state.settings = {};
+  state.settings.ghToken = clean;
+  if (clean) {
+    localStorage.setItem('flight_gh_token', clean);
+  } else {
+    localStorage.removeItem('flight_gh_token');
+  }
+  saveLocalUserPreferences();
+  const mInput = document.getElementById('modalGhTokenInput');
+  if (mInput) mInput.value = clean;
+  const sInput = document.getElementById('settingGhToken');
+  if (sInput) sInput.value = clean;
+}
+
 /**
  * 前端核心逻辑 — 专为 GitHub Public Pages 免后端云端托管设计
  * 特性：
@@ -1184,18 +1204,15 @@ function renderMobileSyncModal() {
  * 远程触发 GitHub Actions workflow_dispatch (若配置了 Repo 和 Token)
  */
 async function triggerGitHubWorkflowDispatch() {
-  const repo = (state.settings.ghRepo || detectGitHubRepoFromUrl() || '').trim();
-  const token = (state.settings.ghToken || '').trim();
+  const repo = (state.settings.ghRepo || detectGitHubRepoFromUrl() || 'frankwyh/flight-monitor').trim();
+  const token = getGitHubToken();
 
-  if (!repo) {
-    return { ok: false, reason: '未检测到 GitHub 仓库名，请在「走势/设置」中填写 用户名/仓库名' };
-  }
   if (!token) {
     return {
       ok: false,
       repo,
       actionsUrl: `https://github.com/${repo}/actions`,
-      reason: '未填写 GitHub Token，可前往 GitHub Actions 页面点击 Run workflow'
+      reason: '未检测到有效的 GitHub Token，请点击重新配置'
     };
   }
 
@@ -1214,11 +1231,26 @@ async function triggerGitHubWorkflowDispatch() {
     if (res.status === 204 || res.ok) {
       return { ok: true, repo };
     }
+    if (res.status === 401) {
+      return {
+        ok: false,
+        repo,
+        status: 401,
+        reason: 'GitHub Token 无效或已过期 (401 Unauthorized)，请点击重新输入正确的 Token'
+      };
+    }
+    if (res.status === 403 || res.status === 404) {
+      return {
+        ok: false,
+        repo,
+        status: res.status,
+        reason: `Token 权限不足或未勾选 workflow 权限 (HTTP ${res.status})，请重新生成并输入`
+      };
+    }
     return {
       ok: false,
       repo,
-      actionsUrl: `https://github.com/${repo}/actions`,
-      reason: `GitHub API 返回状态 ${res.status}`
+      reason: `GitHub API 响应异常 (HTTP ${res.status})`
     };
   } catch (err) {
     return { ok: false, repo, reason: err.message };
@@ -1290,80 +1322,102 @@ function bindEvents() {
     });
   });
 
+  function openRefreshGuideModal() {
+  const modal = document.getElementById('refreshGuideModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  const tokenInput = document.getElementById('modalGhTokenInput');
+  const currentToken = getGitHubToken();
+  if (tokenInput) {
+    tokenInput.value = currentToken;
+  }
+  const statusEl = document.getElementById('modalTokenStatusBadge');
+  if (statusEl) {
+    if (currentToken) {
+      const masked = currentToken.length > 8 ? `${currentToken.slice(0, 4)}****${currentToken.slice(-4)}` : '****';
+      statusEl.innerHTML = `<span style="color:#34d399; font-weight:600;">● 当前已保存 Token: ${masked}</span>`;
+    } else {
+      statusEl.innerHTML = `<span style="color:#94a3b8;">○ 当前未配置 Token (请在下方输入)</span>`;
+    }
+  }
+}
+
   // ==================== 顶部「⚡ 一键刷新」云端自动化浏览器真抓取流程 ====================
   async function executeRealScrapeFlow() {
     const btn = document.getElementById('refreshNowBtn');
     const repo = (state.settings.ghRepo || detectGitHubRepoFromUrl() || 'frankwyh/flight-monitor').trim();
-    const ghToken = (state.settings.ghToken || localStorage.getItem('flight_gh_token') || '').trim();
+    const token = getGitHubToken();
 
-    // 1. 若配置了 GitHub Token，直接在网页内一键调度云端自动化浏览器
-    if (ghToken) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spin">🔄</span> 云端自动化浏览器开机抓取中...';
-      showRefreshToast('<span>🚀 <strong>已向云端发送调度指令！</strong> GitHub Actions 正在启动 Playwright 自动化浏览器抓取携程最新真价格（预计耗时 40~50 秒）...</span>');
-
-      try {
-        const triggerRes = await triggerGitHubWorkflowDispatch();
-        if (!triggerRes.ok) {
-          alert('云端调度失败: ' + triggerRes.reason);
-          btn.disabled = false;
-          btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
-          return;
-        }
-
-        // 轮询等待云端自动化浏览器抓取完成
-        let attempts = 0;
-        const maxAttempts = 18; // 18 * 4s = 72s
-        const pollInterval = setInterval(async () => {
-          attempts++;
-          btn.innerHTML = `<span class="spin">🔄</span> 自动化浏览器抓取中 (${attempts * 4}s)...`;
-          try {
-            const runsRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=1`, {
-              headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' }
-            });
-            if (runsRes.ok) {
-              const runsData = await runsRes.json();
-              const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
-              if (latestRun && latestRun.status === 'completed') {
-                clearInterval(pollInterval);
-                await loadDashboard(true);
-                recalculateSnapshotInBrowser(1.0, true);
-                renderAll();
-                btn.disabled = false;
-                btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
-                showRefreshToast('<span>✅ <strong>云端自动化浏览器抓取完成！</strong> 携程最新真实直飞出票价已同步至网页！</span>');
-                return;
-              }
-            }
-          } catch (e) {}
-
-          if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            btn.disabled = false;
-            btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
-            showRefreshToast('<span>⏳ 云端任务正在执行，数据即将就绪，您稍后刷新页面即可查看！</span>');
-          }
-        }, 4000);
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
-        alert('触发云端抓取异常: ' + err.message);
-      }
+    // 1. 若未配置 Token，直接弹出配置面板
+    if (!token) {
+      openRefreshGuideModal();
       return;
     }
 
-    // 2. 未配置 Token 时，打开云端一键真刷新面板 (提供直达 GitHub Run workflow 按钮与免跳转 Token 输入)
-    const modal = document.getElementById('refreshGuideModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-      const tokenInput = document.getElementById('modalGhTokenInput');
-      if (tokenInput) tokenInput.value = '';
+    // 2. 已有 Token，触发调度
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin">🔄</span> 云端自动化浏览器开机抓取中...';
+    showRefreshToast('<span>🚀 <strong>已向云端发送调度指令！</strong> GitHub Actions 正在启动 Playwright 自动化浏览器抓取携程最新真价格（预计耗时 40~50 秒）...</span>');
+
+    try {
+      const triggerRes = await triggerGitHubWorkflowDispatch();
+      if (!triggerRes.ok) {
+        btn.disabled = false;
+        btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+        showRefreshToast(`<span style="color:#ef4444;">❌ 云端调度失败：${triggerRes.reason}</span>`);
+        alert(`云端调度失败: ${triggerRes.reason}\n\n已为您自动打开 Token 配置窗口，请检查或重新输入！`);
+        openRefreshGuideModal();
+        return;
+      }
+
+      // 轮询等待云端自动化浏览器抓取完成
+      let attempts = 0;
+      const maxAttempts = 20; // 20 * 4s = 80s
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        btn.innerHTML = `<span class="spin">🔄</span> 自动化浏览器抓取中 (${attempts * 4}s)...`;
+        try {
+          const runsRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=1`, {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+          });
+          if (runsRes.ok) {
+            const runsData = await runsRes.json();
+            const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
+            if (latestRun && latestRun.status === 'completed') {
+              clearInterval(pollInterval);
+              await loadDashboard(true);
+              recalculateSnapshotInBrowser(1.0, true);
+              renderAll();
+              btn.disabled = false;
+              btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+              showRefreshToast('<span>✅ <strong>云端自动化浏览器抓取完成！</strong> 携程最新真实直飞出票价已同步至网页！</span>');
+              return;
+            }
+          }
+        } catch (e) {}
+
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          btn.disabled = false;
+          btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+          showRefreshToast('<span>⏳ 云端任务正在执行，数据即将就绪，您稍后刷新页面即可查看！</span>');
+        }
+      }, 4000);
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+      alert('触发云端抓取异常: ' + err.message);
+      openRefreshGuideModal();
     }
   }
 
   document.getElementById('refreshNowBtn').addEventListener('click', executeRealScrapeFlow);
 
-  // 指引弹窗事件绑定
+  const openTokenBtn = document.getElementById('openTokenConfigBtn');
+  if (openTokenBtn) {
+    openTokenBtn.addEventListener('click', openRefreshGuideModal);
+  }
+
   const closeGuideBtn = document.getElementById('closeRefreshGuideBtn');
   if (closeGuideBtn) {
     closeGuideBtn.addEventListener('click', () => {
@@ -1380,12 +1434,25 @@ function bindEvents() {
         alert('请输入有效的 GitHub Token！');
         return;
       }
-      state.settings.ghToken = val;
-      localStorage.setItem('flight_gh_token', val);
+      setGitHubToken(val);
       document.getElementById('refreshGuideModal').classList.add('hidden');
       executeRealScrapeFlow();
     });
   }
+
+  const clearTokenBtn = document.getElementById('clearModalTokenBtn');
+  if (clearTokenBtn) {
+    clearTokenBtn.addEventListener('click', () => {
+      setGitHubToken('');
+      const input = document.getElementById('modalGhTokenInput');
+      if (input) input.value = '';
+      const statusEl = document.getElementById('modalTokenStatusBadge');
+      if (statusEl) statusEl.innerHTML = '<span style="color:#94a3b8;">○ Token 已清除，请重新输入</span>';
+      showRefreshToast('<span>🗑️ 已清除已保存的 GitHub Token</span>');
+    });
+  }
+
+
 
   // 更新去返程日期
   document.getElementById('applyDateBtn').addEventListener('click', () => {
