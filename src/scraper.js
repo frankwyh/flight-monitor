@@ -1359,7 +1359,7 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
  *   1. 跨航司拆分拼票：去程真实含税价 + 返程真实含税价，无虚假折扣
  *   2. 同航司往返/开口：同航司两程实际含税总价（如阿提哈德 ¥7,007、卡航 ¥7,985、阿联酋 ¥9,002）
  */
-function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons, liveMap = {}) {
+function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons, liveMap = {}, ctripDirectPrices = null) {
   const outKey = `${combo.outbound.from}_${combo.outbound.to}`;
   const inKey = `${combo.inbound.from}_${combo.inbound.to}`;
   const outTemplates = FLIGHT_TEMPLATES[outKey] || [];
@@ -1404,10 +1404,20 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
         let baseFare = outBase + inBase;
         let taxAmount = outTax + inTax;
 
-        // 国航直飞往返联程官方套票含税 ¥9,540
-        if (outTpl.flightNo === 'CA967' && inTpl.flightNo === 'CA968') {
+        // 国航/东航直飞往返联程官方套票与携程实时报价对齐
+        if (ctripDirectPrices && ctripDirectPrices.CA967 && outTpl.flightNo === 'CA967' && inTpl.flightNo === 'CA968') {
+          const liveCtripPrice = ctripDirectPrices.CA967.price;
+          taxAmount = 2960;
+          baseFare = Math.max(100, liveCtripPrice - taxAmount);
+        } else if (outTpl.flightNo === 'CA967' && inTpl.flightNo === 'CA968') {
           baseFare = 6580;
           taxAmount = 2960;
+        }
+
+        if (ctripDirectPrices && ctripDirectPrices.MU243 && outTpl.flightNo === 'MU243' && inTpl.flightNo === 'MU244') {
+          const liveCtripPrice = ctripDirectPrices.MU243.price;
+          taxAmount = 2960;
+          baseFare = Math.max(100, liveCtripPrice - taxAmount);
         }
 
         const rawTotalPrice = baseFare + taxAmount;
@@ -1538,6 +1548,7 @@ async function fetchAllMonitoredFlights(options = {}) {
   const skipLive = options.skipLive || false;
 
   let liveMap = {};
+  let ctripDirectPrices = null;
   if (!skipLive) {
     try {
       console.log('📡 [实时引擎] 正在并发连接 Google Flights GDS 抓取最新真实国际票价...');
@@ -1560,6 +1571,18 @@ async function fetchAllMonitoredFlights(options = {}) {
     } catch (e) {
       console.warn('⚠️ [实时引擎] 实时抓取降级，使用高精度 GDS 运价底库:', e.message);
     }
+
+    if (options.includeCtrip !== false) {
+      try {
+        const { scrapeCtripDirectFlights } = require('./ctrip-scraper');
+        ctripDirectPrices = await scrapeCtripDirectFlights(outboundDate, inboundDate);
+        if (ctripDirectPrices && Object.keys(ctripDirectPrices).length > 0) {
+          console.log(`✅ [实时引擎] 携程真实直飞专线数据抓取成功！已同步 ${Object.keys(ctripDirectPrices).join(', ')} 实时报价`);
+        }
+      } catch (e) {
+        console.warn('⚠️ [实时引擎] 携程直飞爬虫跳过或降级:', e.message);
+      }
+    }
   }
 
   // 1. 生成 4 段独立单程报价（真实出票底价）
@@ -1577,7 +1600,7 @@ async function fetchAllMonitoredFlights(options = {}) {
   const allComboFlights = [];
 
   for (const combo of ROUTE_COMBINATIONS) {
-    const flights = buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons, liveMap);
+    const flights = buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons, liveMap, ctripDirectPrices);
 
     const outSegId = combo.outbound.to === 'MXP' ? 'ow_pvg_mxp' : 'ow_pvg_fco';
     const inSegId = combo.inbound.from === 'MXP' ? 'ow_mxp_pvg' : 'ow_fco_pvg';

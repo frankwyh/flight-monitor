@@ -1,4 +1,6 @@
 node_modules/
+.ctrip_browser_profile/
 .DS_Store
 Thumbs.db
 *.log
+scratch_*
