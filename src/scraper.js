@@ -1294,13 +1294,19 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
       }
       const rawPrice = baseFare + taxAmount;
 
+      const [fromCode, toCode] = segmentKey.split('_');
       const quoteEvaluation = evaluateFlightQuotes(
         {
           baseFare,
           taxAmount,
           cabinClass: cabinCode,
           tripType: 'one_way',
-          airlineCode: tpl.airlineCode
+          airlineCode: tpl.airlineCode,
+          outbound: {
+            from: fromCode,
+            to: toCode,
+            date: depDate
+          }
         },
         activeCoupons
       );
@@ -1411,7 +1417,17 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
             cabinClass: cabinCode,
             tripType: combo.tripType,
             airlineCode: isSameAirline ? outTpl.airlineCode : 'MULTI',
-            isSameAirline
+            isSameAirline,
+            outbound: {
+              from: combo.outbound.from,
+              to: combo.outbound.to,
+              date: outboundDate
+            },
+            inbound: {
+              from: combo.inbound.from,
+              to: combo.inbound.to,
+              date: inboundDate
+            }
           },
           activeCoupons
         );
@@ -1425,6 +1441,9 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
         else if (inTpl.stops === 0) highlights.push('返程直飞');
 
         if (combo.tripType === 'open_jaw') highlights.push('开口不走回头路');
+
+        const tierDetails = (ctripDirectPrices?.tierDetails && ctripDirectPrices.tierDetails[comboKey]) || VERIFIED_FALLBACK_PRICES.tierDetails[comboKey] || null;
+        const step1StartingPrice = (ctripDirectPrices?.step1StartingPrices && ctripDirectPrices.step1StartingPrices[outTpl.flightNo]) || VERIFIED_FALLBACK_PRICES.step1StartingPrices[outTpl.flightNo] || null;
 
         const flightObj = {
           id: `${combo.id}_${outTpl.flightNo}_${inTpl.flightNo}_${cabinCode}`,
@@ -1444,6 +1463,8 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
           cabinClass: cabinCode,
           cabinName: '经济舱',
           cabinSubClass: '标准经济舱',
+          tierDetails,
+          step1StartingPrice,
           outbound: {
             date: outboundDate,
             from: combo.outbound.from,

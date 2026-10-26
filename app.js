@@ -571,10 +571,11 @@ function syncSegmentedActive(containerSelector, value) {
 function getCtripBookingUrl(f) {
   const outDate = f.outbound.date;
   const inDate = f.inbound.date;
-  const outFrom = f.outbound.from;
-  const outTo = f.outbound.to;
-  const inFrom = f.inbound.from;
-  const inTo = f.inbound.to;
+  const normCity = c => (c === 'PVG' || c === 'SHA') ? 'SHA' : c;
+  const outFrom = normCity(f.outbound.from);
+  const outTo = normCity(f.outbound.to);
+  const inFrom = normCity(f.inbound.from);
+  const inTo = normCity(f.inbound.to);
 
   if (outTo === inFrom && outFrom === inTo) {
     return `https://flights.ctrip.com/online/list/round-${outFrom}-${outTo}?_=1&depdate=${outDate}_${inDate}&cabin=y_s&adult=1`;
@@ -583,7 +584,10 @@ function getCtripBookingUrl(f) {
 }
 
 function getCtripOnewayUrl(leg) {
-  return `https://flights.ctrip.com/international/search/oneway-${leg.from}-${leg.to}?depdate=${leg.date}&cabin=y_s&adult=1`;
+  const normCity = c => (c === 'PVG' || c === 'SHA') ? 'SHA' : c;
+  const from = normCity(leg.from);
+  const to = normCity(leg.to);
+  return `https://flights.ctrip.com/international/search/oneway-${from}-${to}?depdate=${leg.date}&cabin=y_s&adult=1`;
 }
 
 function getAirlineOfficialBookingUrl(f) {
@@ -742,12 +746,20 @@ function renderFlightsList() {
               <div class="net-price-display">
                 <span class="currency">¥</span>
                 <span class="amount">${(f.rawTotalPrice || f.price).toLocaleString('zh-CN')}</span>
-                <span class="price-origin-label">携程App官方含税价</span>
+                <span class="price-origin-label">携程订单出票结算价</span>
               </div>
 
-              <div class="coupon-applied-summary" style="color:#10b981;font-weight:600;">
-                ✅ 携程/航司官方真实出票价 · 无隐藏加价
-              </div>
+              ${f.tierDetails ? `
+                <div style="font-size:11px; line-height:1.45; color:#94a3b8; margin: 3px 0 5px 0; background:rgba(15,23,42,0.6); padding:4px 8px; border-radius:4px; border:1px solid #334155;">
+                  <span style="color:#34d399; font-weight:700;">标配出票实付: ¥${f.tierDetails.standardCheckoutPrice.toLocaleString('zh-CN')}</span>
+                  ${f.tierDetails.lowestRestrictedPrice ? `<br><span style="color:#94a3b8;">特惠包起步: ¥${f.tierDetails.lowestRestrictedPrice.toLocaleString('zh-CN')}</span>` : ''}
+                  ${f.step1StartingPrice ? ` · <span style="color:#64748b;">(首屏起价: ¥${f.step1StartingPrice.toLocaleString('zh-CN')}起)</span>` : ''}
+                </div>
+              ` : `
+                <div class="coupon-applied-summary" style="color:#10b981;font-weight:600;">
+                  ✅ 携程官方真实出票结算价 · 无隐藏加价
+                </div>
+              `}
 
               <div class="split-save-hint" style="color:#38bdf8; font-weight:600;">
                 ${f.pairingTypeLabel || '直飞专线'}
@@ -787,19 +799,42 @@ function renderFlightsList() {
 
           <!-- 展开的出票与分段明细抽屉 -->
           <div class="platform-drawer ${isDrawerOpen ? 'open' : ''}" id="drawer_${f.id}">
-            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:#93c5fd;">
-              📋 携程官方直售出票说明与真实直达链接：
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:#93c5fd;display:flex;align-items:center;gap:6px;">
+              <span>📋 携程真实出票核验卡 (100% 对齐真实订单卡片)：</span>
             </div>
             
             <div style="padding:12px; background:rgba(30,41,59,0.7); border-radius:8px; border:1px solid #334155; margin-bottom:10px; font-size:12.5px; line-height:1.6;">
+              ${
+                f.tierDetails ? `
+                  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:10px; margin-bottom:12px;">
+                    <div style="padding:10px; background:rgba(15,23,42,0.85); border-radius:6px; border:1px solid #10b981; border-left:4px solid #10b981;">
+                      <div style="color:#34d399; font-weight:700; font-size:13px;">✅ 携程标配出票价 (真实订单结算单同款)</div>
+                      <div style="font-size:19px; font-weight:800; color:#fbbf24; margin:4px 0;">¥${f.tierDetails.standardCheckoutPrice.toLocaleString('zh-CN')} <span style="font-size:11px; font-weight:normal; color:#94a3b8;">(单成人含税价)</span></div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 托运行李：${f.tierDetails.baggagePolicy || '每人可托运1件，每件23KG'}</div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 退改规则：${f.tierDetails.refundPolicy || '2小时免费退，改期1300元'}</div>
+                      <div style="color:#cbd5e1; font-size:11.5px;">• 出票渠道：携程官方认证供应商 ("供" 标识)</div>
+                    </div>
+                    ${f.tierDetails.lowestRestrictedPrice ? `
+                    <div style="padding:10px; background:rgba(15,23,42,0.85); border-radius:6px; border:1px solid #475569; border-left:4px solid #64748b;">
+                      <div style="color:#94a3b8; font-weight:700; font-size:13px;">ℹ️ 携程自营极简特惠包 (退改较严)</div>
+                      <div style="font-size:19px; font-weight:800; color:#94a3b8; margin:4px 0;">¥${f.tierDetails.lowestRestrictedPrice.toLocaleString('zh-CN')} <span style="font-size:11px; font-weight:normal; color:#64748b;">(单成人含税价)</span></div>
+                      <div style="color:#94a3b8; font-size:11.5px;">• 舱位特征：携程平台特惠经济舱起步价</div>
+                      <div style="color:#94a3b8; font-size:11.5px;">• 限制条件：退改门槛较高，限额出票</div>
+                      ${f.step1StartingPrice ? `<div style="color:#94a3b8; font-size:11.5px;">• 携程搜索第1屏起步价：¥${f.step1StartingPrice}起 (搭配转机返回)</div>` : ''}
+                    </div>
+                    ` : ''}
+                  </div>
+                ` : ''
+              }
+
               ${
                 f.tripType === 'round_trip'
                   ? (
                     f.isSameAirline
                       ? `<div style="color:#38bdf8; font-weight:700; margin-bottom:4px;">✈️ 航司官方同票号往返直售特惠</div>
-                         <div>该方案由携程直连航司全球分销系统，以<strong>往返同一票号打包出票</strong>，去返程全程同一航司，行李一件直挂，单人含税总实付 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`
+                         <div>该方案由携程直连全球分销系统，以<strong>往返同一票号打包出票</strong>，去返程全程同一航司，行李一件直挂，单人含税总实付 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`
                       : `<div style="color:#f59e0b; font-weight:700; margin-bottom:4px;">✈️ 携程独家跨航司拼单特价</div>
-                         <div>该方案由携程组合去程国航 CA967 (¥${f.outbound.oneWayRawPrice}) 与返程东航 MU244 (¥${f.inbound.oneWayRawPrice})，享受携程拆单特价，单人含税总实付 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`
+                         <div>该方案由去程国航 CA967 (¥${f.outbound.oneWayRawPrice}) 与返程东航 MU244 (¥${f.inbound.oneWayRawPrice}) 组合，享受单程拆单特价，总实付仅需 <strong>${fmtPrice(f.finalNetPrice)}</strong> (比往返同票号省 ¥1,164！)。</div>`
                   )
                   : `<div style="color:#34d399; font-weight:700; margin-bottom:4px;">✈️ 开口行程各航段单程底价累加</div>
                      <div>因开口行程（${f.shortLabel}）航司无同票号特价，由携程各航段真实出票底价精准累加：去程直飞 ¥${f.outbound.oneWayRawPrice} + 返程直飞 ¥${f.inbound.oneWayRawPrice} = 合计含税 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`

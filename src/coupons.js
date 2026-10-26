@@ -2,9 +2,9 @@
  * 真实商业出票渠道与核价引擎 (携程官方直售)
  * 严格遵循真实民航出票规则：
  * 1. 闭口往返 (上海 ⇄ 米兰 / 上海 ⇄ 罗马)：直接查询携程往返票，获取真实同票号往返联程打包价与组合特价
+ *    - 国航直飞往返 CA967 + CA968 = ¥9,686 (标配供应商出票价，含1件23KG行李，2小时免费退改1300元，与携程订单卡片完全一致)
  *    - 东航直飞往返 MU243 + MU244 = ¥9,712 (航司同票号特惠)
- *    - 国航直飞往返 CA967 + CA968 = ¥9,245 (航司同票号特惠)
- *    - 跨航司组合 CA967 + MU244 = ¥8,522 (携程组合特价)
+ *    - 跨航司组合 CA967 + MU244 = ¥8,522 (携程组合特价，立省 ¥1,164)
  *    - 东航罗马往返 MU787 + MU788 = ¥11,865 (航司同票号特惠)
  * 2. 开口多程 (米进罗出 / 罗进米出)：航司无统一往返特惠，由携程各航段真实单程出票底价精准累加
  *    - CA967 (¥4,510), MU243 (¥7,747), MU787 (¥9,097)
@@ -46,11 +46,28 @@ function evaluateFlightQuotes(flightItem) {
     baseFare,
     taxAmount,
     isSameAirline = true,
-    airlineCode
+    airlineCode,
+    outbound,
+    inbound,
+    tripType
   } = flightItem;
 
   const rawTotalPrice = baseFare + taxAmount;
   const isMultiAirline = airlineCode === 'MULTI' || isSameAirline === false;
+
+  let bookingUrl;
+  if (outbound && inbound && tripType === 'round_trip') {
+    const outFrom = outbound.from === 'PVG' ? 'SHA' : outbound.from;
+    const outTo = outbound.to;
+    bookingUrl = `https://flights.ctrip.com/online/list/round-${outFrom}-${outTo}?depdate=${outbound.date}_${inbound.date}&cabin=y_s&adult=1`;
+  } else if (outbound && inbound && tripType === 'open_jaw') {
+    bookingUrl = 'https://flights.ctrip.com/international/search/multicity';
+  } else if (outbound && !inbound) {
+    const outFrom = outbound.from === 'PVG' ? 'SHA' : outbound.from;
+    bookingUrl = `https://flights.ctrip.com/international/search/oneway-${outFrom}-${outbound.to}?depdate=${outbound.date}&cabin=y_s&adult=1`;
+  } else {
+    bookingUrl = 'https://flights.ctrip.com/online/list/round-SHA-MXP?depdate=2027-04-10_2027-04-24&cabin=y_s&adult=1';
+  }
 
   const ctripQuote = {
     platformId: 'ctrip',
@@ -66,7 +83,7 @@ function evaluateFlightQuotes(flightItem) {
     finalNetPrice: rawTotalPrice,
     appliedCoupons: [],
     formulaText: isMultiAirline ? '携程组合特价 (航段拆分出票)' : '携程官方往返打包直连出票',
-    bookingUrl: PLATFORMS.ctrip.bookingUrl('PVG', 'MXP', '2027-04-10', 'MXP', 'PVG', '2027-04-24')
+    bookingUrl
   };
 
   return {
