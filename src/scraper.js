@@ -1410,7 +1410,8 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
             taxAmount,
             cabinClass: cabinCode,
             tripType: combo.tripType,
-            airlineCode: isSameAirline ? outTpl.airlineCode : 'MULTI'
+            airlineCode: isSameAirline ? outTpl.airlineCode : 'MULTI',
+            isSameAirline
           },
           activeCoupons
         );

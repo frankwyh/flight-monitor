@@ -6,7 +6,7 @@
  *   3. 支持配置 GitHub Repo + Token 直接在手机/电脑网页端远程触发 GitHub Actions workflow_dispatch 云端爬虫
  */
 
-const STORAGE_KEY = 'italy_flight_monitor_user_state_v8';
+const STORAGE_KEY = 'italy_flight_monitor_user_state_v9';
 
 const state = {
   isStaticMode: true,
@@ -107,37 +107,102 @@ function evaluateFlightQuotesBrowser(flightItem, activeCoupons, platformsMeta, p
   const rawTotalPrice = flightItem.rawTotalPrice || (flightItem.baseFare + flightItem.taxAmount);
   const taxAmount = flightItem.taxAmount || 2960;
   const baseFare = Math.max(100, rawTotalPrice - taxAmount);
+  const isMultiAirline = flightItem.airlineCode === 'MULTI' || flightItem.isSameAirline === false;
 
   const platformQuotes = [];
-  for (const [platformId, platformMeta] of Object.entries(platformsMeta || {})) {
+
+  // 1. 携程旅行：OTA 无论同航司还是跨航司均可拆单出票
+  platformQuotes.push({
+    platformId: 'ctrip',
+    platformName: '携程旅行',
+    shortName: '携程官方',
+    color: '#2577e3',
+    badgeBg: '#e8f2ff',
+    isAvailable: true,
+    rawTotalPrice,
+    baseFare,
+    taxAmount,
+    totalDiscount: 0,
+    finalNetPrice: rawTotalPrice,
+    appliedCoupons: [],
+    formulaText: isMultiAirline ? '携程独家组合特价 (分开出票)' : '携程官方往返打包直连出票'
+  });
+
+  // 2. 航司官网直销：跨航司不可售
+  if (isMultiAirline) {
     platformQuotes.push({
-      platformId,
-      platformName: platformMeta.name,
-      shortName: platformMeta.shortName,
-      color: platformMeta.color,
-      badgeBg: platformMeta.badgeBg,
+      platformId: 'airline_direct',
+      platformName: '航司官方直销',
+      shortName: '航司官网',
+      color: '#7c3aed',
+      badgeBg: '#f3e8ff',
+      isAvailable: false,
+      statusText: '不支持跨航司拼单',
+      rawTotalPrice: null,
+      baseFare: null,
+      taxAmount: null,
+      totalDiscount: 0,
+      finalNetPrice: null,
+      appliedCoupons: [],
+      formulaText: '航司官网仅售本航司纯直飞往返，无法出其他航司回程票'
+    });
+  } else {
+    const airlineName = flightItem.airlineCode === 'CA' ? '中国国航官方直销' : (flightItem.airlineCode === 'MU' ? '中国东航官方直销' : '航司官方直销');
+    platformQuotes.push({
+      platformId: 'airline_direct',
+      platformName: airlineName,
+      shortName: '航司官网',
+      color: '#7c3aed',
+      badgeBg: '#f3e8ff',
+      isAvailable: true,
       rawTotalPrice,
       baseFare,
       taxAmount,
       totalDiscount: 0,
       finalNetPrice: rawTotalPrice,
       appliedCoupons: [],
-      formulaText: `${platformMeta.shortName}官方含税实票价 ¥${rawTotalPrice}`
+      formulaText: '航司官方App/官网直营同价同票号'
     });
   }
 
-  const bestPlatform = platformQuotes.find(p => p.platformId === 'ctrip') || platformQuotes[0] || {
-    platformId: 'ctrip',
-    platformName: '携程旅行',
-    shortName: '携程',
-    rawTotalPrice,
-    finalNetPrice: rawTotalPrice,
-    totalDiscount: 0,
-    appliedCoupons: []
-  };
+  // 3. Google Flights：跨航司拆单不可售
+  if (isMultiAirline) {
+    platformQuotes.push({
+      platformId: 'google_flights',
+      platformName: 'Google Flights',
+      shortName: 'Google比价',
+      color: '#0f9d58',
+      badgeBg: '#e6f4ea',
+      isAvailable: false,
+      statusText: '不支持跨航司拆单',
+      rawTotalPrice: null,
+      baseFare: null,
+      taxAmount: null,
+      totalDiscount: 0,
+      finalNetPrice: null,
+      appliedCoupons: [],
+      formulaText: 'Google Flights 暂不支持国航与东航跨联盟拆单直飞'
+    });
+  } else {
+    platformQuotes.push({
+      platformId: 'google_flights',
+      platformName: 'Google Flights',
+      shortName: 'Google比价',
+      color: '#0f9d58',
+      badgeBg: '#e6f4ea',
+      isAvailable: true,
+      rawTotalPrice,
+      baseFare,
+      taxAmount,
+      totalDiscount: 0,
+      finalNetPrice: rawTotalPrice,
+      appliedCoupons: [],
+      formulaText: '国际GDS航线收录比价参考'
+    });
+  }
 
   return {
-    bestPlatform,
+    bestPlatform: platformQuotes[0],
     allPlatforms: platformQuotes,
     baseFare,
     rawTotalPrice
@@ -682,41 +747,31 @@ function renderFlightsList() {
           <!-- 展开的比价渠道 -->
           <div class="platform-drawer ${isDrawerOpen ? 'open' : ''}" id="drawer_${f.id}">
             <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:#93c5fd;">
-              🔍 官方实票出票渠道与比价链接：
+              🔍 官方实票出票渠道与比价验证：
             </div>
             <div class="platform-quotes-grid">
-              <div class="plat-quote-item winner">
-                <div class="plat-head">
-                  <span>👑 携程旅行</span>
-                  <span class="plat-net-val">${fmtPrice(f.rawTotalPrice)}</span>
-                </div>
-                <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
-                  官方含税价 <strong>${fmtPrice(f.rawTotalPrice)}</strong>
-                </div>
-                <a href="${getCtripBookingUrl(f)}" target="_blank" rel="noopener" class="plat-book-btn">直达携程预订 →</a>
-              </div>
-
-              <div class="plat-quote-item">
-                <div class="plat-head">
-                  <span>${f.outbound.airlineName || '航司'}官方直销</span>
-                  <span class="plat-net-val">${fmtPrice(f.rawTotalPrice)}</span>
-                </div>
-                <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
-                  航司直营官网/App
-                </div>
-                <a href="${getAirlineOfficialBookingUrl(f)}" target="_blank" rel="noopener" class="plat-book-btn">前往航司官网 →</a>
-              </div>
-
-              <div class="plat-quote-item">
-                <div class="plat-head">
-                  <span>Google Flights</span>
-                  <span class="plat-net-val">${fmtPrice(f.rawTotalPrice)}</span>
-                </div>
-                <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
-                  国际GDS航线比价
-                </div>
-                <a href="${getGoogleFlightsUrl(f)}" target="_blank" rel="noopener" class="plat-book-btn">前往Google比价 →</a>
-              </div>
+              ${f.allPlatforms
+                .map(
+                  (p, idx) => `
+                  <div class="plat-quote-item ${p.isAvailable ? (idx === 0 ? 'winner' : '') : 'unavailable'}" style="${!p.isAvailable ? 'opacity:0.65; background:rgba(30,41,59,0.5); border:1px dashed #475569;' : ''}">
+                    <div class="plat-head">
+                      <span>${p.isAvailable && idx === 0 ? '👑 ' : ''}${p.platformName}</span>
+                      <span class="plat-net-val" style="${!p.isAvailable ? 'color:#ef4444;font-size:12px;' : ''}">
+                        ${p.isAvailable ? fmtPrice(p.finalNetPrice) : (p.statusText || '不可售')}
+                      </span>
+                    </div>
+                    <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
+                      ${p.formulaText}
+                    </div>
+                    ${
+                      p.isAvailable
+                        ? `<a href="${p.platformId === 'ctrip' ? getCtripBookingUrl(f) : (p.platformId === 'airline_direct' ? getAirlineOfficialBookingUrl(f) : getGoogleFlightsUrl(f))}" target="_blank" rel="noopener" class="plat-book-btn">前往${p.shortName} →</a>`
+                        : `<span style="font-size:11px;color:#64748b;display:inline-block;padding:3px 0;">(不支持跨航司出票)</span>`
+                    }
+                  </div>
+                `
+                )
+                .join('')}
             </div>
 
             ${
