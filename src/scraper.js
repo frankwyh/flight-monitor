@@ -1232,13 +1232,6 @@ const CABIN_CONFIGS = {
     subClasses: ['标准经济舱'],
     baseMultiplier: 1.0,
     taxMultiplier: 1.0
-  },
-  BUSINESS: {
-    code: 'BUSINESS',
-    name: '公务舱/商务舱',
-    subClasses: ['公务舱特惠/早鸟'],
-    baseMultiplier: 1.0,
-    taxMultiplier: 1.0
   }
 };
 
@@ -1287,7 +1280,8 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
     if (tpl.stops > 1 || tpl.durationMinutes > 1320) continue;
 
     for (const cabinCode of tpl.cabins) {
-      const isBiz = cabinCode === 'BUSINESS';
+      if (cabinCode !== 'ECONOMY') continue; // 仅保留经济舱
+      const isBiz = false;
       let baseFare = isBiz ? (tpl.businessBase || Math.round(tpl.baseEconomy * 3.8)) : tpl.baseEconomy;
       let taxAmount = isBiz ? (tpl.businessTax || 2180) : tpl.taxEconomy;
 
@@ -1385,7 +1379,8 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
       const commonCabins = outTpl.cabins.filter(c => inTpl.cabins.includes(c));
 
       for (const cabinCode of commonCabins) {
-        const isBiz = cabinCode === 'BUSINESS';
+        if (cabinCode !== 'ECONOMY') continue; // 仅保留经济舱
+        const isBiz = false;
         let outBase = isBiz ? (outTpl.businessBase || Math.round(outTpl.baseEconomy * 3.8)) : outTpl.baseEconomy;
         let outTax = isBiz ? (outTpl.businessTax || 2180) : outTpl.taxEconomy;
 
@@ -1626,11 +1621,9 @@ async function fetchAllMonitoredFlights(options = {}) {
 
     const economyFlights = flights.filter(f => f.cabinClass === 'ECONOMY');
     const directEconomyFlights = economyFlights.filter(f => f.isBothDirect);
-    const businessFlights = flights.filter(f => f.cabinClass === 'BUSINESS');
-
     const lowestOverall = flights[0] || null;
     const lowestDirect = directEconomyFlights[0] || flights.find(f => f.isBothDirect) || null;
-    const lowestBusiness = businessFlights[0] || null;
+    const lowestBusiness = null;
 
     const cheapestOutOW = outOneWays.filter(o => o.cabinClass === 'ECONOMY')[0];
     const cheapestInOW = inOneWays.filter(o => o.cabinClass === 'ECONOMY')[0];

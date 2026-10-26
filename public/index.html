@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./icon.svg" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20261026_v3" />
+  <link rel="stylesheet" href="./styles.css?v=20261026_v4" />
 </head>
 <body>
   <!-- 顶部导航与监控状态栏 -->
@@ -110,22 +110,17 @@
         </div>
 
         <div class="filter-group">
-          <label>直飞/中转</label>
+          <label>直飞专线筛选</label>
           <div class="segmented-control" id="stopsFilterGroup">
-            <button class="seg-btn active" data-value="ALL">直飞+1次中转</button>
-            <button class="seg-btn" data-value="BOTH_DIRECT">仅去返双直飞</button>
-            <button class="seg-btn" data-value="HAS_DIRECT">至少单程直飞</button>
+            <button class="seg-btn active" data-value="BOTH_DIRECT">🔥 去返双直飞 (国航/东航)</button>
+            <button class="seg-btn" data-value="ALL">包含转机方案</button>
           </div>
         </div>
 
         <div class="filter-group">
-          <label>舱位等级</label>
-          <div class="segmented-control" id="cabinFilterGroup">
-            <button class="seg-btn active" data-value="ALL">不限舱位</button>
-            <button class="seg-btn" data-value="ECONOMY">经济舱</button>
-            <button class="seg-btn" data-value="PREMIUM_ECONOMY">超级经济</button>
-            <button class="seg-btn" data-value="BUSINESS">公务舱</button>
-            <button class="seg-btn" data-value="FIRST">头等舱</button>
+          <label>舱位标准</label>
+          <div class="cabin-lock-pill">
+            ✈️ 全程标准经济舱 (按要求已删除公务舱/超经)
           </div>
         </div>
 
@@ -441,6 +436,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20261026_v3"></script>
+  <script src="./app.js?v=20261026_v4"></script>
 </body>
 </html>

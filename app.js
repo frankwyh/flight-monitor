@@ -6,7 +6,7 @@
  *   3. 支持配置 GitHub Repo + Token 直接在手机/电脑网页端远程触发 GitHub Actions workflow_dispatch 云端爬虫
  */
 
-const STORAGE_KEY = 'italy_flight_monitor_user_state_v2';
+const STORAGE_KEY = 'italy_flight_monitor_user_state_v4';
 
 const state = {
   isStaticMode: true,
@@ -28,8 +28,8 @@ const state = {
   baseSnapshot: null,
   filters: {
     combination: 'ALL',
-    stops: 'ALL',
-    cabin: 'ALL',
+    stops: 'BOTH_DIRECT',
+    cabin: 'ECONOMY',
     airline: 'ALL',
     sortBy: 'NET_PRICE_ASC',
     oneWaySeg: 'PVG_MXP'
@@ -498,8 +498,8 @@ function renderComboOverviewCards() {
               <strong>${direct ? fmtPrice(direct.finalNetPrice) : '需中转'}</strong>
             </div>
             <div class="sub-metric-item">
-              <span>公务舱特惠最低</span>
-              <strong>${biz ? fmtPrice(biz.finalNetPrice) : '--'}</strong>
+              <span>出票类型</span>
+              <strong style="color:#38bdf8">${direct ? '双直飞组合特价' : '中转特惠'}</strong>
             </div>
             <div class="sub-metric-item">
               <span>两段单买合计</span>
@@ -669,8 +669,8 @@ function renderFlightsList() {
 
               <div class="net-price-display">
                 <span class="currency">¥</span>
-                <span class="amount">${f.finalNetPrice.toLocaleString('zh-CN')}</span>
-                <span class="raw-strike">含税原价 ¥${f.rawTotalPrice}</span>
+                <span class="amount">${(f.rawTotalPrice || f.price).toLocaleString('zh-CN')}</span>
+                <span class="price-origin-label">携程App官方含税价</span>
               </div>
 
               <div class="coupon-applied-summary">
