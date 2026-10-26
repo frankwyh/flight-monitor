@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-10-26T05:07:24.829Z",
+  "generatedAt": "2026-10-26T05:33:33.694Z",
   "scheduleInfo": "每天 09:00 / 21:00 (北京时间) 自动刷新 2 次 + 支持页面手动刷新",
   "settings": {
     "outboundDate": "2027-04-10",
@@ -399,11 +399,21 @@
       "rome_round_trip": 6338,
       "direct_lowest": 8522,
       "business_lowest": 13800
+    },
+    {
+      "timestamp": "2026-10-26T05:33:33.692Z",
+      "label": "10/26 13:33",
+      "milan_in_rome_out": 6118,
+      "rome_in_milan_out": 6346,
+      "milan_round_trip": 6126,
+      "rome_round_trip": 6338,
+      "direct_lowest": 8522,
+      "business_lowest": 13800
     }
   ],
   "favorites": [],
   "snapshot": {
-    "fetchedAt": "2026-10-26T05:07:24.828Z",
+    "fetchedAt": "2026-10-26T05:33:33.692Z",
     "outboundDate": "2027-04-10",
     "inboundDate": "2027-04-24",
     "dataSource": "Google Flights 实时 GDS 运价同步引擎",
