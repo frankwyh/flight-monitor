@@ -353,7 +353,7 @@ const FLIGHT_TEMPLATES = {
       stopAirport: null,
       layoverMinutes: 0,
       baggage: '国航旗舰直飞 · 免费托运 23kg',
-      baseEconomy: 3085,
+      baseEconomy: 3030,
       taxEconomy: 1480, // 携程特价单程含税 ¥4,565 (组合特价总计 ¥9,245)
       businessBase: 14600,
       businessTax: 2200,
@@ -376,7 +376,7 @@ const FLIGHT_TEMPLATES = {
       stopAirport: null,
       layoverMinutes: 0,
       baggage: '东航上海大本营直飞 · 免费托运 23kg',
-      baseEconomy: 3400,
+      baseEconomy: 6267,
       taxEconomy: 1480, // 远期舱位基准含税 ¥4,880
       businessBase: 14780,
       businessTax: 2200,
@@ -610,7 +610,7 @@ const FLIGHT_TEMPLATES = {
       stopAirport: null,
       layoverMinutes: 0,
       baggage: '黄金正班直飞罗马 · 免费托运 23kg',
-      baseEconomy: 3440,
+      baseEconomy: 7617,
       taxEconomy: 1480, // 远期舱位基准含税 ¥4,920
       businessBase: 15000,
       businessTax: 2200,
@@ -913,7 +913,7 @@ const FLIGHT_TEMPLATES = {
       stopAirport: null,
       layoverMinutes: 0,
       baggage: '国航米兰直飞上海 · 免费托运 23kg',
-      baseEconomy: 3200,
+      baseEconomy: 3255,
       taxEconomy: 1480, // 携程特价单程含税 ¥4,680 (组合特价总计 ¥9,245)
       businessBase: 14600,
       businessTax: 2200,
@@ -936,7 +936,7 @@ const FLIGHT_TEMPLATES = {
       stopAirport: null,
       layoverMinutes: 0,
       baggage: '东航米兰直飞上海 · 免费托运 23kg',
-      baseEconomy: 3480,
+      baseEconomy: 2532,
       taxEconomy: 1480, // 远期舱位基准含税 ¥4,960
       businessBase: 14900,
       businessTax: 2200,
@@ -1216,7 +1216,7 @@ const FLIGHT_TEMPLATES = {
       stopAirport: null,
       layoverMinutes: 0,
       baggage: '罗马直飞上海浦东 · 免费托运 23kg',
-      baseEconomy: 3440,
+      baseEconomy: 3205,
       taxEconomy: 1480, // 远期舱位基准含税 ¥4,920
       businessBase: 14900,
       businessTax: 2200,
@@ -1279,7 +1279,7 @@ async function fetchGoogleFlightsLive(queryText) {
 /**
  * 生成单程航班报价列表
  */
-function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []) {
+function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = [], ctripDirectPrices = null) {
   const templates = FLIGHT_TEMPLATES[segmentKey] || [];
   const results = [];
 
@@ -1291,8 +1291,12 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
       let baseFare = isBiz ? (tpl.businessBase || Math.round(tpl.baseEconomy * 3.8)) : tpl.baseEconomy;
       let taxAmount = isBiz ? (tpl.businessTax || 2180) : tpl.taxEconomy;
 
-      // 实时 GDS 运价注入
-      if (!isBiz && liveFlights && liveFlights.length > 0) {
+      // 实时携程与 GDS 运价注入
+      if (!isBiz && ctripDirectPrices && ctripDirectPrices[tpl.flightNo]) {
+        const livePrice = ctripDirectPrices[tpl.flightNo];
+        taxAmount = tpl.taxEconomy || 1480;
+        baseFare = Math.max(100, livePrice - taxAmount);
+      } else if (!isBiz && liveFlights && liveFlights.length > 0) {
         const livePrice = findBestLivePrice(tpl, liveFlights);
         if (livePrice && livePrice > 800) {
           taxAmount = tpl.taxEconomy || 1480;
@@ -1388,14 +1392,24 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
         let inBase = isBiz ? (inTpl.businessBase || Math.round(inTpl.baseEconomy * 3.8)) : inTpl.baseEconomy;
         let inTax = isBiz ? (inTpl.businessTax || 2180) : inTpl.taxEconomy;
 
+        if (!isBiz && ctripDirectPrices) {
+          if (ctripDirectPrices[outTpl.flightNo]) {
+            outTax = outTpl.taxEconomy || 1480;
+            outBase = Math.max(100, ctripDirectPrices[outTpl.flightNo] - outTax);
+          }
+          if (ctripDirectPrices[inTpl.flightNo]) {
+            inTax = inTpl.taxEconomy || 1480;
+            inBase = Math.max(100, ctripDirectPrices[inTpl.flightNo] - inTax);
+          }
+        }
         if (!isBiz && liveMap) {
           const outLive = findBestLivePrice(outTpl, liveMap[outKey] || []);
-          if (outLive && outLive > 800) {
+          if (outLive && outLive > 800 && (!ctripDirectPrices || !ctripDirectPrices[outTpl.flightNo])) {
             outTax = outTpl.taxEconomy || 1480;
             outBase = Math.max(100, outLive - outTax);
           }
           const inLive = findBestLivePrice(inTpl, liveMap[inKey] || []);
-          if (inLive && inLive > 800) {
+          if (inLive && inLive > 800 && (!ctripDirectPrices || !ctripDirectPrices[inTpl.flightNo])) {
             inTax = inTpl.taxEconomy || 1480;
             inBase = Math.max(100, inLive - inTax);
           }
@@ -1404,19 +1418,7 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
         let baseFare = outBase + inBase;
         let taxAmount = outTax + inTax;
 
-        // 国航直飞往返（CA967 + CA968 去返双直飞黄金搭档）：
-        // 严格锁定携程 App 真实去返双直飞组合特价：¥9,245（去程 ¥4,565 + 返程 ¥4,680）
-        // 绝不使用“返程搭配低价中转外航”的起价（7k+）来混淆去返双直飞！
-        if (outTpl.flightNo === 'CA967' && inTpl.flightNo === 'CA968') {
-          baseFare = 6285;
-          taxAmount = 2960; // 裸票含税总价严格对齐携程实测 ¥9,245
-        }
-
-        // 东航直飞往返（MU243 + MU244 去返双直飞）：
-        if (outTpl.flightNo === 'MU243' && inTpl.flightNo === 'MU244') {
-          baseFare = 6400;
-          taxAmount = 2960; // 裸票含税总价对齐携程实测 ¥9,360
-        }
+// 组合特价完全由去程实价 + 返程实价自然累加，精准对应携程 App
 
         const rawTotalPrice = baseFare + taxAmount;
 
@@ -1588,7 +1590,7 @@ async function fetchAllMonitoredFlights(options = {}) {
   for (const seg of ONE_WAY_SEGMENTS) {
     const segKey = `${seg.from}_${seg.to}`;
     const date = seg.direction === 'outbound' ? outboundDate : inboundDate;
-    const owFlights = buildOneWayFlights(segKey, date, activeCoupons, liveMap[segKey] || []);
+    const owFlights = buildOneWayFlights(segKey, date, activeCoupons, liveMap[segKey] || [], ctripDirectPrices);
     oneWayBySegment[seg.id] = owFlights;
     oneWayBySegment[segKey] = owFlights;
   }
