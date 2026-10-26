@@ -393,6 +393,26 @@
       "rome_round_trip": 6338,
       "direct_lowest": 8522,
       "business_lowest": 13800
+    },
+    {
+      "timestamp": "2026-10-26T06:07:07.436Z",
+      "label": "10/26 14:07",
+      "milan_in_rome_out": 6118,
+      "rome_in_milan_out": 6346,
+      "milan_round_trip": 6126,
+      "rome_round_trip": 6338,
+      "direct_lowest": 8522,
+      "business_lowest": 13800
+    },
+    {
+      "timestamp": "2026-10-26T06:11:39.452Z",
+      "label": "10/26 14:11",
+      "milan_in_rome_out": 6118,
+      "rome_in_milan_out": 6346,
+      "milan_round_trip": 6126,
+      "rome_round_trip": 6338,
+      "direct_lowest": 8522,
+      "business_lowest": 13800
     }
   ],
   "favorites": []

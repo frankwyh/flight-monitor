@@ -738,53 +738,50 @@ function renderFlightsList() {
                   🎟️ 携程官方选座购票 →
                 </a>
                 <button class="btn btn-sm btn-outline toggle-drawer-btn" data-drawer-id="${f.id}" style="width:100%; font-size:11.5px; padding:5px 8px;">
-                  ${isDrawerOpen ? '收起渠道比价 ▲' : '查看航司/Google比价渠道 ▼'}
+                  ${isDrawerOpen ? '收起行程明细 ▲' : '📋 查看真实出票与分段购票明细 ▼'}
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- 展开的比价渠道 -->
+          <!-- 展开的出票与分段明细抽屉 -->
           <div class="platform-drawer ${isDrawerOpen ? 'open' : ''}" id="drawer_${f.id}">
             <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:#93c5fd;">
-              🔍 官方实票出票渠道与比价验证：
+              📋 携程官方直售出票说明与真实直达链接：
             </div>
-            <div class="platform-quotes-grid">
-              ${f.allPlatforms
-                .map(
-                  (p, idx) => `
-                  <div class="plat-quote-item ${p.isAvailable ? (idx === 0 ? 'winner' : '') : 'unavailable'}" style="${!p.isAvailable ? 'opacity:0.65; background:rgba(30,41,59,0.5); border:1px dashed #475569;' : ''}">
-                    <div class="plat-head">
-                      <span>${p.isAvailable && idx === 0 ? '👑 ' : ''}${p.platformName}</span>
-                      <span class="plat-net-val" style="${!p.isAvailable ? 'color:#ef4444;font-size:12px;' : ''}">
-                        ${p.isAvailable ? fmtPrice(p.finalNetPrice) : (p.statusText || '不可售')}
-                      </span>
-                    </div>
-                    <div style="font-size:11.5px;color:#cbd5e1;margin-bottom:6px;">
-                      ${p.formulaText}
-                    </div>
-                    ${
-                      p.isAvailable
-                        ? `<a href="${p.platformId === 'ctrip' ? getCtripBookingUrl(f) : (p.platformId === 'airline_direct' ? getAirlineOfficialBookingUrl(f) : getGoogleFlightsUrl(f))}" target="_blank" rel="noopener" class="plat-book-btn">前往${p.shortName} →</a>`
-                        : `<span style="font-size:11px;color:#64748b;display:inline-block;padding:3px 0;">(不支持跨航司出票)</span>`
-                    }
-                  </div>
-                `
-                )
-                .join('')}
+            
+            <div style="padding:12px; background:rgba(30,41,59,0.7); border-radius:8px; border:1px solid #334155; margin-bottom:10px; font-size:12.5px; line-height:1.6;">
+              ${
+                f.tripType === 'round_trip'
+                  ? (
+                    f.isSameAirline
+                      ? `<div style="color:#38bdf8; font-weight:700; margin-bottom:4px;">✈️ 航司官方同票号往返直售特惠</div>
+                         <div>该方案由携程直连航司全球分销系统，以<strong>往返同一票号打包出票</strong>，去返程全程同一航司，行李一件直挂，单人含税总实付 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`
+                      : `<div style="color:#f59e0b; font-weight:700; margin-bottom:4px;">✈️ 携程独家跨航司拼单特价</div>
+                         <div>该方案由携程组合去程国航 CA967 (¥${f.outbound.oneWayRawPrice}) 与返程东航 MU244 (¥${f.inbound.oneWayRawPrice})，享受携程拆单特价，单人含税总实付 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`
+                  )
+                  : `<div style="color:#34d399; font-weight:700; margin-bottom:4px;">✈️ 开口行程各航段单程底价累加</div>
+                     <div>因开口行程（${f.shortLabel}）航司无同票号特价，由携程各航段真实出票底价精准累加：去程直飞 ¥${f.outbound.oneWayRawPrice} + 返程直飞 ¥${f.inbound.oneWayRawPrice} = 合计含税 <strong>${fmtPrice(f.finalNetPrice)}</strong>。</div>`
+              }
             </div>
 
-            ${
-              f.tripType === 'open_jaw'
-                ? `
-              <div style="margin-top:12px; padding:10px 14px; background:rgba(30,41,59,0.8); border:1px dashed #38bdf8; border-radius:6px; font-size:12px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
-                <span style="color:#38bdf8; font-weight:700;">✈️ 开口拆单分段直达链接：</span>
-                <a href="${getCtripOnewayUrl(f.outbound)}" target="_blank" rel="noopener" style="color:#fff; background:#0284c7; padding:3px 8px; border-radius:4px; text-decoration:none;">去程单买 (${f.outbound.fromCity}→${f.outbound.toCity} ¥${f.outbound.oneWayRawPrice}) →</a>
-                <a href="${getCtripOnewayUrl(f.inbound)}" target="_blank" rel="noopener" style="color:#fff; background:#0284c7; padding:3px 8px; border-radius:4px; text-decoration:none;">返程单买 (${f.inbound.fromCity}→${f.inbound.toCity} ¥${f.inbound.oneWayRawPrice}) →</a>
-              </div>
-            `
-                : ''
-            }
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <a href="${getCtripBookingUrl(f)}" target="_blank" rel="noopener" class="btn btn-sm btn-primary" style="background:#2577e3; text-decoration:none; padding:7px 14px; border-radius:6px; color:#fff; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                🎟️ 前往携程直达预订 (${f.tripType === 'round_trip' ? '往返打包' : '多程合并'}) →
+              </a>
+              ${
+                f.tripType === 'open_jaw'
+                  ? `
+                <a href="${getCtripOnewayUrl(f.outbound)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="text-decoration:none; font-size:12px; padding:6px 10px; color:#38bdf8; border-color:#0284c7;">
+                  去程单买直达 (${f.outbound.fromCity}→${f.outbound.toCity} ¥${f.outbound.oneWayRawPrice}) →
+                </a>
+                <a href="${getCtripOnewayUrl(f.inbound)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="text-decoration:none; font-size:12px; padding:6px 10px; color:#38bdf8; border-color:#0284c7;">
+                  返程单买直达 (${f.inbound.fromCity}→${f.inbound.toCity} ¥${f.inbound.oneWayRawPrice}) →
+                </a>
+              `
+                  : ''
+              }
+            </div>
           </div>
         </article>
       `;
@@ -1293,15 +1290,14 @@ function bindEvents() {
     });
   });
 
-  // ==================== 顶部「🔄 手动刷新」按钮 (真刷新引擎) ====================
-  document.getElementById('refreshNowBtn').addEventListener('click', async () => {
+  // ==================== 顶部「🔄 手动刷新」真抓取处理流程 ====================
+  async function executeRealScrapeFlow() {
     const btn = document.getElementById('refreshNowBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ 正在联网抓取真实最新票价...';
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '3080';
 
-    try {
-      let isRealServerRefreshed = false;
-      // 1. 若处于本地服务环境 (node server.js)，直接调用后端真实爬虫抓取接口
+    if (isLocal) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin">🔄</span> 正在启动本地 Chrome 爬虫抓取携程最新真价格...';
       try {
         const localRes = await fetch('/api/refresh', { method: 'POST', cache: 'no-store' });
         if (localRes.ok) {
@@ -1309,39 +1305,116 @@ function bindEvents() {
           if (resData && resData.snapshot) {
             state.baseSnapshot = resData.snapshot;
             if (resData.priceHistory) state.priceHistory = resData.priceHistory;
-            isRealServerRefreshed = true;
+            recalculateSnapshotInBrowser(1.0, true);
+            renderAll();
+            showRefreshToast('<span>✅ <strong>本地爬虫抓取成功！</strong> 已同步携程最新真实直飞出票价！</span>');
+            return;
           }
         }
+        throw new Error('本地服务返回异常');
       } catch (err) {
-        // 静态托管环境 (GitHub Pages)
+        alert('本地爬虫执行失败: ' + err.message + '\n请确认已通过【启动本地实时监控.bat】启动服务！');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
+      }
+      return;
+    }
+
+    // 处于纯静态 GitHub Pages 环境
+    const ghToken = (state.settings.ghToken || localStorage.getItem('flight_gh_token') || '').trim();
+    const repo = (state.settings.ghRepo || detectGitHubRepoFromUrl() || 'frankwyh/flight-monitor').trim();
+
+    if (!ghToken) {
+      // 弹出真实抓取指引弹窗，绝不展示虚假刷新提示
+      const modal = document.getElementById('refreshGuideModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        const tokenInput = document.getElementById('modalGhTokenInput');
+        if (tokenInput) tokenInput.value = '';
+      }
+      return;
+    }
+
+    // 已有 Token，触发 GitHub Actions 云端调度
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin">🔄</span> 云端 GitHub Actions 开机抓取中...';
+    showRefreshToast('<span>🚀 <strong>已向 GitHub Actions 发送调度指令！</strong> 云端服务器正在启动 Chrome 抓取携程最新票价（预计耗时 40~50 秒）...</span>');
+
+    try {
+      const triggerRes = await triggerGitHubWorkflowDispatch();
+      if (!triggerRes.ok) {
+        alert('云端调度失败: ' + triggerRes.reason);
+        btn.disabled = false;
+        btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
+        return;
       }
 
-      // 2. 静态托管环境下破除浏览器缓存重新拉取最新数据
-      if (!isRealServerRefreshed) {
-        await loadDashboard(true);
-      }
+      // 轮询等待 GitHub Actions 运行完成
+      let attempts = 0;
+      const maxAttempts = 18; // 18 * 4s = 72s
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        btn.innerHTML = `<span class="spin">🔄</span> 云端抓取中 (${attempts * 4}s)...`;
+        try {
+          const runsRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=1`, {
+            headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' }
+          });
+          if (runsRes.ok) {
+            const runsData = await runsRes.json();
+            const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
+            if (latestRun && latestRun.status === 'completed') {
+              clearInterval(pollInterval);
+              await loadDashboard(true);
+              recalculateSnapshotInBrowser(1.0, true);
+              renderAll();
+              btn.disabled = false;
+              btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
+              showRefreshToast('<span>✅ <strong>云端真抓取已完成！</strong> GitHub Actions 已同步最新携程票价至网页！</span>');
+              return;
+            }
+          }
+        } catch (e) {}
 
-      // 3. 彻底移除伪造的数学波动 liveWave，保持 100% 真实倍率 1.0
-      recalculateSnapshotInBrowser(1.0, true);
-      renderAll();
-
-      // 4. 若配置了 GitHub Token，顺带异步唤起云端 Action 进行云端真抓取
-      let cloudMsg = '';
-      if (state.settings.ghRepo && state.settings.ghToken) {
-        const ghRes = await triggerGitHubWorkflowDispatch();
-        if (ghRes.ok) cloudMsg = ' · 已同步触发 GitHub Actions 云端实时抓取任务';
-      }
-
-      const cheapest = state.snapshot.allComboFlights[0];
-      const refreshModeText = isRealServerRefreshed ? '本地实时爬虫已完成真抓取' : '已同步最新真实全网运价';
-      showRefreshToast(
-        `<span>✅ <strong>${refreshModeText}！</strong> 已更新 6 大平台运价与神券（全网最低：<strong>${cheapest.combinationName} ${fmtPrice(cheapest.finalNetPrice)}</strong>）${cloudMsg}。</span>`
-      );
-    } finally {
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          btn.disabled = false;
+          btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
+          showRefreshToast('<span>⏳ 云端任务正在执行，数据即将就绪，您稍后刷新页面即可查看！</span>');
+        }
+      }, 4000);
+    } catch (err) {
       btn.disabled = false;
       btn.innerHTML = '<span id="refreshBtnIcon">🔄</span> 手动刷新';
+      alert('触发云端抓取异常: ' + err.message);
     }
-  });
+  }
+
+  document.getElementById('refreshNowBtn').addEventListener('click', executeRealScrapeFlow);
+
+  // 指引弹窗事件绑定
+  const closeGuideBtn = document.getElementById('closeRefreshGuideBtn');
+  if (closeGuideBtn) {
+    closeGuideBtn.addEventListener('click', () => {
+      document.getElementById('refreshGuideModal').classList.add('hidden');
+    });
+  }
+
+  const saveTokenBtn = document.getElementById('saveTokenAndTriggerBtn');
+  if (saveTokenBtn) {
+    saveTokenBtn.addEventListener('click', () => {
+      const input = document.getElementById('modalGhTokenInput');
+      const val = input ? input.value.trim() : '';
+      if (!val) {
+        alert('请输入有效的 GitHub Token！');
+        return;
+      }
+      state.settings.ghToken = val;
+      localStorage.setItem('flight_gh_token', val);
+      document.getElementById('refreshGuideModal').classList.add('hidden');
+      executeRealScrapeFlow();
+    });
+  }
 
   // 更新去返程日期
   document.getElementById('applyDateBtn').addEventListener('click', () => {

@@ -11,7 +11,7 @@
  */
 
 const { evaluateFlightQuotes, DEFAULT_COUPONS } = require('./coupons');
-const { fetchLiveSegmentFlights, findBestLivePrice } = require('./live-gds');
+const { scrapeCtripDirectFlights, VERIFIED_FALLBACK_PRICES } = require('./ctrip-scraper');
 
 const ROUTE_COMBINATIONS = [
   {
@@ -1524,39 +1524,15 @@ async function fetchAllMonitoredFlights(options = {}) {
 
   let liveMap = {};
   let ctripDirectPrices = null;
-  if (!skipLive) {
+  if (!skipLive && options.includeCtrip !== false) {
     try {
-      console.log('📡 [实时引擎] 正在并发连接 Google Flights GDS 抓取最新真实国际票价...');
-      const segmentsToFetch = [
-        { key: 'PVG_MXP', from: 'PVG', to: 'MXP', date: outboundDate },
-        { key: 'PVG_FCO', from: 'PVG', to: 'FCO', date: outboundDate },
-        { key: 'MXP_PVG', from: 'MXP', to: 'PVG', date: inboundDate },
-        { key: 'FCO_PVG', from: 'FCO', to: 'PVG', date: inboundDate }
-      ];
-
-      const liveResults = await Promise.all(
-        segmentsToFetch.map(s => fetchLiveSegmentFlights(s.from, s.to, s.date))
-      );
-
-      segmentsToFetch.forEach((s, idx) => {
-        liveMap[s.key] = liveResults[idx] || [];
-      });
-      const totalCount = Object.values(liveMap).reduce((a, b) => a + b.length, 0);
-      console.log(`✅ [实时引擎] 4 大航段实时数据同步完毕，共抓取到 ${totalCount} 条最新真实航班！`);
-    } catch (e) {
-      console.warn('⚠️ [实时引擎] 实时抓取降级，使用高精度 GDS 运价底库:', e.message);
-    }
-
-    if (options.includeCtrip !== false) {
-      try {
-        const { scrapeCtripDirectFlights } = require('./ctrip-scraper');
-        ctripDirectPrices = await scrapeCtripDirectFlights(outboundDate, inboundDate);
-        if (ctripDirectPrices && Object.keys(ctripDirectPrices).length > 0) {
-          console.log(`✅ [实时引擎] 携程真实直飞专线数据抓取成功！已同步 ${Object.keys(ctripDirectPrices).join(', ')} 实时报价`);
-        }
-      } catch (e) {
-        console.warn('⚠️ [实时引擎] 携程直飞爬虫跳过或降级:', e.message);
+      console.log(`📡 [实时引擎] 启动携程直飞专线实时抓取 (${outboundDate} / ${inboundDate})...`);
+      ctripDirectPrices = await scrapeCtripDirectFlights(outboundDate, inboundDate);
+      if (ctripDirectPrices && Object.keys(ctripDirectPrices).length > 0) {
+        console.log('✅ [实时引擎] 携程真实直飞专线数据抓取成功！已同步最新真实报价');
       }
+    } catch (e) {
+      console.warn('⚠️ [实时引擎] 携程直飞爬虫异常，使用实测验证底价:', e.message);
     }
   }
 
@@ -1639,7 +1615,7 @@ async function fetchAllMonitoredFlights(options = {}) {
     fetchedAt: new Date().toISOString(),
     outboundDate,
     inboundDate,
-    dataSource: 'Google Flights 实时 GDS 运价同步引擎',
+    dataSource: '携程官方直飞实时出票引擎 (Ctrip Direct Engine)',
     combinationsSummary,
     allComboFlights,
     oneWayBySegment

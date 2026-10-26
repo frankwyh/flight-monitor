@@ -58,7 +58,7 @@ async function refreshFlightData(recordHistory = true) {
     const payload = JSON.stringify({
       ok: true,
       generatedAt: new Date().toISOString(),
-      scheduleInfo: '每天 09:00 与 21:00 自动巡检刷新 (Google Flights 实时 GDS 引擎)',
+      scheduleInfo: '携程官方直飞专线实时抓取引擎 (每天自动巡检 + 支持手动即时抓取)',
       settings: appState.settings,
       coupons: appState.coupons,
       platforms: PLATFORMS,
@@ -326,17 +326,31 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-// 启动初始化并设置定时监控任务
-refreshFlightData(true).then(() => {
-  server.listen(PORT, '0.0.0.0', () => {
-    const lanIp = getLocalLanIp();
-    console.log('============================================================');
-    console.log('✈️  上海 ⇄ 米兰/罗马 机票价格与优惠券监控中心已启动！');
-    console.log(`💻 电脑浏览器访问: http://localhost:${PORT}`);
-    console.log(`📱 iOS 手机端访问: http://${lanIp}:${PORT} (同一Wi-Fi下扫码直达)`);
-    console.log('============================================================');
-  });
+// 初始化：优先读取已有静态快照，实现秒级冷启动
+const initialDataPath = path.join(__dirname, 'data', 'latest.json');
+if (fs.existsSync(initialDataPath)) {
+  try {
+    const raw = JSON.parse(fs.readFileSync(initialDataPath, 'utf8'));
+    if (raw && raw.snapshot) {
+      latestSnapshot = raw.snapshot;
+      console.log('📦 [本地服务] 已成功载入已有快照数据，服务实现秒级启动');
+    }
+  } catch (e) {}
+}
+
+server.listen(PORT, '0.0.0.0', () => {
+  const lanIp = getLocalLanIp();
+  console.log('============================================================');
+  console.log('✈️  上海 ⇄ 米兰/罗马 机票价格实时监控中心已启动！');
+  console.log(`💻 电脑浏览器访问: http://localhost:${PORT}`);
+  console.log(`📱 iOS 手机端访问: http://${lanIp}:${PORT} (同一Wi-Fi下扫码直达)`);
+  console.log('💡 网页端点击「🔄 手动刷新」将直接在本地启动真实 Chrome 爬虫抓取携程！');
+  console.log('============================================================');
 });
+
+if (!latestSnapshot) {
+  refreshFlightData(true).catch(err => console.error('启动初次抓取异常:', err.message));
+}
 
 // 每 15 分钟后台自动巡检一次价格
 setInterval(() => {
