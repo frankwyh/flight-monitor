@@ -6,7 +6,7 @@
  *   3. 支持配置 GitHub Repo + Token 直接在手机/电脑网页端远程触发 GitHub Actions workflow_dispatch 云端爬虫
  */
 
-const STORAGE_KEY = 'italy_flight_monitor_user_state_v4';
+const STORAGE_KEY = 'italy_flight_monitor_user_state_v5';
 
 const state = {
   isStaticMode: true,
@@ -691,7 +691,7 @@ function renderFlightsList() {
 
               <div class="price-side-actions">
                 <button class="btn btn-sm btn-outline toggle-drawer-btn" data-drawer-id="${f.id}" style="flex:1">
-                  ${isDrawerOpen ? '收起6大平台比价 ▲' : '展开6大平台&神券明细 ▼'}
+                  ${isDrawerOpen ? '收起官方比价 ▲' : '查看携程与航司官方出票渠道 ▼'}
                 </button>
               </div>
             </div>
@@ -700,7 +700,7 @@ function renderFlightsList() {
           <!-- 展开的 6 大平台横向比价与神券叠加公式 -->
           <div class="platform-drawer ${isDrawerOpen ? 'open' : ''}" id="drawer_${f.id}">
             <div style="font-size:12.5px;font-weight:700;margin-bottom:6px;color:#93c5fd;">
-              🔍 该航班在 6 大购票渠道的票面价、税费及优惠券叠加实付对比（票面 ¥${f.baseFare} + 税费 ¥${f.taxAmount}）：
+              🔍 携程官方实票出票价与航司/国际GDS比价（票面 ¥${f.baseFare} + 税费 ¥${f.taxAmount}）：
             </div>
             <div class="platform-quotes-grid">
               ${f.allPlatforms

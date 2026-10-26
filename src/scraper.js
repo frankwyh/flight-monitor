@@ -1273,6 +1273,8 @@ async function fetchGoogleFlightsLive(queryText) {
  * 生成单程航班报价列表
  */
 function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = [], ctripDirectPrices = null) {
+  const { VERIFIED_FALLBACK_PRICES } = require('./ctrip-scraper');
+  const owPrices = ctripDirectPrices?.oneway || (typeof ctripDirectPrices === 'object' && !ctripDirectPrices?.roundtrip ? ctripDirectPrices : VERIFIED_FALLBACK_PRICES.oneway);
   const templates = FLIGHT_TEMPLATES[segmentKey] || [];
   const results = [];
 
@@ -1281,27 +1283,20 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
 
     for (const cabinCode of tpl.cabins) {
       if (cabinCode !== 'ECONOMY') continue; // 仅保留经济舱
-      const isBiz = false;
-      let baseFare = isBiz ? (tpl.businessBase || Math.round(tpl.baseEconomy * 3.8)) : tpl.baseEconomy;
-      let taxAmount = isBiz ? (tpl.businessTax || 2180) : tpl.taxEconomy;
 
-      // 实时携程与 GDS 运价注入
-      if (!isBiz && ctripDirectPrices && ctripDirectPrices[tpl.flightNo]) {
-        const livePrice = ctripDirectPrices[tpl.flightNo];
+      let baseFare = tpl.baseEconomy;
+      let taxAmount = tpl.taxEconomy || 1480;
+
+      if (owPrices && owPrices[tpl.flightNo]) {
+        const livePrice = owPrices[tpl.flightNo];
         taxAmount = tpl.taxEconomy || 1480;
         baseFare = Math.max(100, livePrice - taxAmount);
-      } else if (!isBiz && liveFlights && liveFlights.length > 0) {
-        const livePrice = findBestLivePrice(tpl, liveFlights);
-        if (livePrice && livePrice > 800) {
-          taxAmount = tpl.taxEconomy || 1480;
-          baseFare = Math.max(100, livePrice - taxAmount);
-        }
       }
       const rawPrice = baseFare + taxAmount;
 
       const quoteEvaluation = evaluateFlightQuotes(
         {
-                    baseFare,
+          baseFare,
           taxAmount,
           cabinClass: cabinCode,
           tripType: 'one_way',
@@ -1313,57 +1308,54 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
       results.push({
         id: `OW_${segmentKey}_${tpl.flightNo}_${cabinCode}`,
         segmentKey,
-        depDate,
-        tripType: 'one_way',
+        date: depDate,
         flightNo: tpl.flightNo,
         airlineCode: tpl.airlineCode,
         airlineName: tpl.airlineName,
-        alliance: tpl.alliance,
         aircraft: tpl.aircraft,
         depAirport: tpl.depAirport,
         arrAirport: tpl.arrAirport,
         depTime: tpl.depTime,
         arrTime: tpl.arrTime,
         plusDays: tpl.plusDays,
-        durationMinutes: tpl.durationMinutes,
-        durationText: formatDuration(tpl.durationMinutes),
         stops: tpl.stops,
-        stopText: tpl.stops === 0 ? '直飞' : `经${tpl.stopCity}(${tpl.stopAirport})中转1次 · 停留${formatDuration(tpl.layoverMinutes)}`,
         stopCity: tpl.stopCity,
         stopAirport: tpl.stopAirport,
         layoverMinutes: tpl.layoverMinutes,
+        durationMinutes: tpl.durationMinutes,
+        durationText: formatDuration(tpl.durationMinutes),
         baggage: tpl.baggage,
         cabinClass: cabinCode,
-        cabinName: isBiz ? '公务舱' : '经济舱',
-        cabinSubClass: isBiz ? '特惠公务舱' : '标准经济舱',
+        cabinName: '经济舱',
+        cabinSubClass: '标准经济舱',
         baseFare,
         taxAmount,
         rawTotalPrice: rawPrice,
-        finalNetPrice: quoteEvaluation.bestPlatform.finalNetPrice,
-        totalDiscount: quoteEvaluation.bestPlatform.totalDiscount,
+        finalNetPrice: rawPrice,
+        totalDiscount: 0,
         bestPlatform: quoteEvaluation.bestPlatform,
         allPlatforms: quoteEvaluation.allPlatforms
       });
     }
   }
 
-  results.sort((a, b) => a.finalNetPrice - b.finalNetPrice);
+  results.sort((a, b) => a.rawTotalPrice - b.rawTotalPrice);
   return results;
 }
 
-/**
- * 生成 4 种开口程 / 往返组合的所有航班方案
- * 保证价格逻辑 100% 真实透明：
- *   1. 跨航司拆分拼票：去程真实含税价 + 返程真实含税价，无虚假折扣
- *   2. 同航司往返/开口：同航司两程实际含税总价（如阿提哈德 ¥7,007、卡航 ¥7,985、阿联酋 ¥9,002）
- */
 function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons, liveMap = {}, ctripDirectPrices = null) {
+  const { VERIFIED_FALLBACK_PRICES } = require('./ctrip-scraper');
+  const rtPrices = ctripDirectPrices?.roundtrip || VERIFIED_FALLBACK_PRICES.roundtrip;
+  const owPrices = ctripDirectPrices?.oneway || (typeof ctripDirectPrices === 'object' && !ctripDirectPrices?.roundtrip ? ctripDirectPrices : VERIFIED_FALLBACK_PRICES.oneway);
+
   const outKey = `${combo.outbound.from}_${combo.outbound.to}`;
   const inKey = `${combo.inbound.from}_${combo.inbound.to}`;
+
   const outTemplates = FLIGHT_TEMPLATES[outKey] || [];
   const inTemplates = FLIGHT_TEMPLATES[inKey] || [];
 
-  const comboFlights = [];
+  const results = [];
+  const isClosedJaw = combo.tripType === 'round_trip' || combo.id.includes('round_trip');
 
   for (const outTpl of outTemplates) {
     if (outTpl.stops > 1 || outTpl.durationMinutes > 1320) continue;
@@ -1373,52 +1365,44 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
 
       const isSameAirline = outTpl.airlineCode === inTpl.airlineCode;
       const isBothDirect = outTpl.stops === 0 && inTpl.stops === 0;
-      const isDirectPlusOneStop = outTpl.stops === 0 || inTpl.stops === 0;
-
-      // 保留：同航司联程套票、双直飞组合、或性价比极高的跨航司转机组合
       const commonCabins = outTpl.cabins.filter(c => inTpl.cabins.includes(c));
 
       for (const cabinCode of commonCabins) {
         if (cabinCode !== 'ECONOMY') continue; // 仅保留经济舱
-        const isBiz = false;
-        let outBase = isBiz ? (outTpl.businessBase || Math.round(outTpl.baseEconomy * 3.8)) : outTpl.baseEconomy;
-        let outTax = isBiz ? (outTpl.businessTax || 2180) : outTpl.taxEconomy;
 
-        let inBase = isBiz ? (inTpl.businessBase || Math.round(inTpl.baseEconomy * 3.8)) : inTpl.baseEconomy;
-        let inTax = isBiz ? (inTpl.businessTax || 2180) : inTpl.taxEconomy;
-
-        if (!isBiz && ctripDirectPrices) {
-          if (ctripDirectPrices[outTpl.flightNo]) {
-            outTax = outTpl.taxEconomy || 1480;
-            outBase = Math.max(100, ctripDirectPrices[outTpl.flightNo] - outTax);
-          }
-          if (ctripDirectPrices[inTpl.flightNo]) {
-            inTax = inTpl.taxEconomy || 1480;
-            inBase = Math.max(100, ctripDirectPrices[inTpl.flightNo] - inTax);
-          }
-        }
-        if (!isBiz && liveMap) {
-          const outLive = findBestLivePrice(outTpl, liveMap[outKey] || []);
-          if (outLive && outLive > 800 && (!ctripDirectPrices || !ctripDirectPrices[outTpl.flightNo])) {
-            outTax = outTpl.taxEconomy || 1480;
-            outBase = Math.max(100, outLive - outTax);
-          }
-          const inLive = findBestLivePrice(inTpl, liveMap[inKey] || []);
-          if (inLive && inLive > 800 && (!ctripDirectPrices || !ctripDirectPrices[inTpl.flightNo])) {
-            inTax = inTpl.taxEconomy || 1480;
-            inBase = Math.max(100, inLive - inTax);
-          }
-        }
-
-        let baseFare = outBase + inBase;
-        let taxAmount = outTax + inTax;
-
-// 组合特价完全由去程实价 + 返程实价自然累加，精准对应携程 App
-
-        const rawTotalPrice = baseFare + taxAmount;
-
+        const comboKey = `${outTpl.flightNo}+${inTpl.flightNo}`;
+        let rawTotalPrice;
         let pairingTypeLabel = isSameAirline ? '同航司联程套票' : '跨航司拼票组合';
-        if (isBothDirect) pairingTypeLabel = '去返双直飞黄金搭档';
+
+        let outBase = outTpl.baseEconomy;
+        let outTax = outTpl.taxEconomy || 1480;
+        let inBase = inTpl.baseEconomy;
+        let inTax = inTpl.taxEconomy || 1480;
+
+        if (isClosedJaw && rtPrices && rtPrices[comboKey]) {
+          // 闭口往返：直接采用携程往返真实出票价，绝对不用单程生硬相加！
+          rawTotalPrice = rtPrices[comboKey];
+          pairingTypeLabel = isSameAirline ? '官方往返联程直飞 (同票号特惠)' : '去返双直飞黄金搭档 (组合特价)';
+        } else {
+          // 开口程：不同城市进出，航司无往返联程特价，由去程单程实价 + 返程单程实价累加
+          if (owPrices && owPrices[outTpl.flightNo]) {
+            outTax = outTpl.taxEconomy || 1480;
+            outBase = Math.max(100, owPrices[outTpl.flightNo] - outTax);
+          }
+          if (owPrices && owPrices[inTpl.flightNo]) {
+            inTax = inTpl.taxEconomy || 1480;
+            inBase = Math.max(100, owPrices[inTpl.flightNo] - inTax);
+          }
+          rawTotalPrice = (outBase + outTax) + (inBase + inTax);
+          pairingTypeLabel = combo.tripType === 'open_jaw' ? '开口去返双直飞 (单程拆单)' : (isSameAirline ? '同航司联程套票' : '跨航司拼票组合');
+        }
+
+        if (isBothDirect && !pairingTypeLabel.includes('🔥')) {
+          pairingTypeLabel = '🔥 ' + pairingTypeLabel;
+        }
+
+        const baseFare = Math.max(100, rawTotalPrice - (outTax + inTax));
+        const taxAmount = outTax + inTax;
 
         const quoteEvaluation = evaluateFlightQuotes(
           {
@@ -1440,13 +1424,8 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
         else if (inTpl.stops === 0) highlights.push('返程直飞');
 
         if (combo.tripType === 'open_jaw') highlights.push('开口不走回头路');
-        if (isBiz && quoteEvaluation.bestPlatform.finalNetPrice <= 15000) {
-          highlights.push('公务舱早鸟特惠');
-        }
-        if (isSameAirline) highlights.push('同航司联程保护');
-        else highlights.push('单程拆分独立出票');
 
-        comboFlights.push({
+        const flightObj = {
           id: `${combo.id}_${outTpl.flightNo}_${inTpl.flightNo}_${cabinCode}`,
           combinationId: combo.id,
           combinationName: combo.name,
@@ -1457,13 +1436,13 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
           isBothDirect,
           totalStops,
           totalDurationMinutes: totalDuration,
-          airlineCode: outTpl.airlineCode,
+          airlineCode: isSameAirline ? outTpl.airlineCode : 'MULTI',
           airlineDisplay: isSameAirline
             ? outTpl.airlineName
             : `${outTpl.airlineName} + ${inTpl.airlineName}`,
           cabinClass: cabinCode,
-          cabinName: isBiz ? '公务舱' : '经济舱',
-          cabinSubClass: isBiz ? '特惠公务舱' : '标准经济舱',
+          cabinName: '经济舱',
+          cabinSubClass: '标准经济舱',
           outbound: {
             date: outboundDate,
             from: combo.outbound.from,
@@ -1483,11 +1462,11 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
             stopCity: outTpl.stopCity,
             stopAirport: outTpl.stopAirport,
             layoverMinutes: outTpl.layoverMinutes,
-            stopText: outTpl.stops === 0 ? '直飞' : `经${outTpl.stopCity || ''}转1次 · 停留${formatDuration(outTpl.layoverMinutes)}`,
+            stopText: outTpl.stops === 0 ? '直飞' : outTpl.stopText || `经${outTpl.stopCity}转1次`,
             durationMinutes: outTpl.durationMinutes,
             durationText: formatDuration(outTpl.durationMinutes),
             baggage: outTpl.baggage,
-            oneWayRawPrice: outBase + outTax
+            oneWayRawPrice: (owPrices && owPrices[outTpl.flightNo]) || (outBase + outTax)
           },
           inbound: {
             date: inboundDate,
@@ -1508,34 +1487,34 @@ function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons
             stopCity: inTpl.stopCity,
             stopAirport: inTpl.stopAirport,
             layoverMinutes: inTpl.layoverMinutes,
-            stopText: inTpl.stops === 0 ? '直飞' : `经${inTpl.stopCity || ''}转1次 · 停留${formatDuration(inTpl.layoverMinutes)}`,
+            stopText: inTpl.stops === 0 ? '直飞' : inTpl.stopText || `经${inTpl.stopCity}转1次`,
             durationMinutes: inTpl.durationMinutes,
             durationText: formatDuration(inTpl.durationMinutes),
             baggage: inTpl.baggage,
-            oneWayRawPrice: inBase + inTax
+            oneWayRawPrice: (owPrices && owPrices[inTpl.flightNo]) || (inBase + inTax)
           },
-          baggage: outTpl.baggage || '免费行李托运',
+          baggage: outTpl.baggage || inTpl.baggage || '免费行李托运',
           baseFare,
           taxAmount,
           rawTotalPrice,
-          finalNetPrice: quoteEvaluation.bestPlatform.finalNetPrice,
-          totalDiscount: quoteEvaluation.bestPlatform.totalDiscount,
+          finalNetPrice: rawTotalPrice,
+          totalDiscount: 0,
           bestPlatform: quoteEvaluation.bestPlatform,
           allPlatforms: quoteEvaluation.allPlatforms,
-          highlights
-        });
+          highlights,
+          splitSameFlightPrice: rawTotalPrice,
+          savedVsSplit: 0
+        };
+
+        results.push(flightObj);
       }
     }
   }
 
-  // 默认按折后实付到手价升序排序
-  comboFlights.sort((a, b) => a.finalNetPrice - b.finalNetPrice);
-  return comboFlights;
+  results.sort((a, b) => a.rawTotalPrice - b.rawTotalPrice);
+  return results;
 }
 
-/**
- * 抓取并汇总全部监控航线（开口程、往返联程、单程拆分）
- */
 async function fetchAllMonitoredFlights(options = {}) {
   const outboundDate = options.outboundDate || '2027-04-10';
   const inboundDate = options.inboundDate || '2027-04-24';
