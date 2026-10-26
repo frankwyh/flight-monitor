@@ -6,7 +6,7 @@
  *   3. 支持配置 GitHub Repo + Token 直接在手机/电脑网页端远程触发 GitHub Actions workflow_dispatch 云端爬虫
  */
 
-const STORAGE_KEY = 'italy_flight_monitor_user_state_v6';
+const STORAGE_KEY = 'italy_flight_monitor_user_state_v7';
 
 const state = {
   isStaticMode: true,
@@ -482,6 +482,48 @@ function syncSegmentedActive(containerSelector, value) {
 /**
  * 筛选并渲染开口/往返航班列表
  */
+
+function getCtripBookingUrl(f) {
+  const outDate = f.outbound.date;
+  const inDate = f.inbound.date;
+  const outFrom = f.outbound.from;
+  const outTo = f.outbound.to;
+  const inFrom = f.inbound.from;
+  const inTo = f.inbound.to;
+
+  if (outTo === inFrom && outFrom === inTo) {
+    return `https://flights.ctrip.com/online/list/round-${outFrom}-${outTo}?_=1&depdate=${outDate}_${inDate}&cabin=y_s&adult=1`;
+  }
+  return `https://flights.ctrip.com/international/search/multicity`;
+}
+
+function getCtripOnewayUrl(leg) {
+  return `https://flights.ctrip.com/international/search/oneway-${leg.from}-${leg.to}?depdate=${leg.date}&cabin=y_s&adult=1`;
+}
+
+function getAirlineOfficialBookingUrl(f) {
+  if (f.outbound.airlineCode === 'CA' || f.inbound.airlineCode === 'CA') {
+    return 'https://www.airchina.com.cn/';
+  }
+  if (f.outbound.airlineCode === 'MU' || f.inbound.airlineCode === 'MU') {
+    return 'https://www.ceair.com/';
+  }
+  return 'https://www.airchina.com.cn/';
+}
+
+function getGoogleFlightsUrl(f) {
+  const outDate = f.outbound.date;
+  const inDate = f.inbound.date;
+  const outFrom = f.outbound.from;
+  const outTo = f.outbound.to;
+  const inFrom = f.inbound.from;
+  const inTo = f.inbound.to;
+  if (outTo === inFrom) {
+    return `https://www.google.com/travel/flights?q=flights%20from%20${outFrom}%20to%20${outTo}%20on%20${outDate}%20return%20${inDate}&curr=CNY`;
+  }
+  return `https://www.google.com/travel/flights?q=flights%20from%20${outFrom}%20to%20${outTo}%20on%20${outDate}%20and%20${inFrom}%20to%20${inTo}%20on%20${inDate}&curr=CNY`;
+}
+
 function renderFlightsList() {
   const allFlights = state.snapshot.allComboFlights || [];
   const { combination, stops, cabin, airline, sortBy } = state.filters;

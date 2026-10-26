@@ -1,4 +1,4 @@
-const CACHE_NAME = 'italy-flight-monitor-v6';
+const CACHE_NAME = 'italy-flight-monitor-v7';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './icon.svg', './manifest.json'];
 
 self.addEventListener('install', event => {
