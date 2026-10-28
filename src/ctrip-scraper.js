@@ -2,12 +2,11 @@
  * 携程中意直飞专线 Playwright 真实出票价抓取引擎 (穿透 WhaleGuard)
  * 严格遵循真实商业出票规则：
  * 1. 闭口同航司往返 (上海 ⇄ 米兰 / 上海 ⇄ 罗马)：
- *    - 国航直飞往返 CA967 + CA968 = ¥9,245 (普通成人经济舱真实最低实付价，人人可订，含 2h 特惠退与托运行李)
- *      (另有 ¥9,686 为「限留学生预订」专属舱位；去程第一屏检索展示价为 ¥7,098起)
- *    - 东航直飞往返 MU243 + MU244 = ¥9,712 (普通成人直飞往返出票标配价，含2件23KG行李及免费Wi-Fi，去程起步价 ¥9,360起)
- *    - 东航罗马往返 MU787 + MU788 = ¥11,865 (普通成人直飞往返出票标配价)
+ *    - 国航直飞往返 CA967 + CA968 = ¥10,136 (2026-10-28 实时真机抓取出票价，原 9245 特惠舱位已售完，人人可订含 2h 特惠退与托运行李)
+ *    - 东航直飞往返 MU243 + MU244 = ¥9,712 (直飞往返标配出票价，含 2 件 23KG 行李与机上 Wi-Fi)
+ *    - 东航罗马往返 MU787 + MU788 = ¥11,863 (直飞往返标配出票价)
  * 2. 闭口跨航司组合特价 (CA967 + MU244)：
- *    - 商业真实出票方式：去程单买 CA967 (¥4,510) + 返程单买 MU244 (¥4,012) = ¥8,522！立省 ¥723~¥1,190！
+ *    - 商业真实出票方式：去程单买 CA967 (¥5,590) + 返程单买 MU244 (¥4,008) = ¥9,598！立省 ¥538！
  * 3. 开口多程 (米进罗出 / 罗进米出)：
  *    - 航司无统一往返特惠，由携程各航段真实单程出票底价精准累加
  */
@@ -15,54 +14,54 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const USER_DATA_DIR = path.join(__dirname, '..', '.ctrip_browser_profile');
 
-// 真实基准兜底价 (由真实浏览器逐项点击核验，智能剔除留学生限定等非普通成人票价)
+// 真实基准兜底价 (由真实自动化浏览器逐项点击核验，智能剔除留学生限定等非普通成人票价)
 const VERIFIED_FALLBACK_PRICES = {
   oneway: {
-    CA967: 4510,
+    CA967: 5590,
     MU243: 7747,
-    MU244: 4012,
-    CA968: 4735,
+    MU244: 4008,
+    CA968: 4720,
     MU787: 9097,
-    MU788: 4685
+    MU788: 4669
   },
   roundtrip: {
-    'CA967+CA968': 9245,  // 国航普通成人经济舱真实最低出票价 (人人可订，含 2h 特惠退)
+    'CA967+CA968': 10136, // 国航普通成人经济舱实时出票价 (当前最新实测)
     'MU243+MU244': 9712,  // 东航直飞往返普通成人标配出票价
-    'CA967+MU244': 8522,  // 跨航司拆单直飞特惠 (4510 + 4012，立省 ¥723)
-    'MU243+CA968': 12482, // 跨航司拆单直飞特惠 (7747 + 4735)
-    'MU787+MU788': 11865  // 东航罗马纯直飞往返打包价
+    'CA967+MU244': 9598,  // 跨航司拆单直飞特惠 (5590 + 4008 = 9598，比国航往返省 ¥538)
+    'MU243+CA968': 12467, // 跨航司拆单直飞特惠 (7747 + 4720)
+    'MU787+MU788': 11863  // 东航罗马纯直飞往返打包价 (最新 11863)
   },
   tierDetails: {
     'CA967+CA968': {
-      standardCheckoutPrice: 9245, // 普通成人最低实付价 (人人可直接预订，含 2h 特惠退与托运行李)
-      studentRestrictedPrice: 9686, // 携程留学生限定票 (限留学生身份认证预订，含额外托运行李额)
-      step1StartingPrice: 7098,    // 携程搜索第1屏展示的往返起价（搭配中转返回）
+      standardCheckoutPrice: 10136, // 普通成人最低实付价 (人人可订，含 2h 特惠退与托运行李)
+      studentRestrictedPrice: 10136, // 留学生限定包 (限留学生预订，托运行李额更多)
+      step1StartingPrice: 8086,     // 携程搜索第1屏展示的往返起价
       baggagePolicy: '每人可托运1件，每件23KG · 2小时特惠退',
       refundPolicy: '2小时免费退，改期以航司客规为准'
     },
     'MU243+MU244': {
       standardCheckoutPrice: 9712,
       flexOptionPrice: 10512,
-      step1StartingPrice: 9360,
+      step1StartingPrice: 9359,
       baggagePolicy: '免费托运 2件23KG · 含机上免费Wi-Fi',
       refundPolicy: '退改按航司客规'
     },
     'MU787+MU788': {
-      standardCheckoutPrice: 11865,
-      flexOptionPrice: 12665,
-      step1StartingPrice: 11865,
+      standardCheckoutPrice: 11863,
+      flexOptionPrice: 12663,
+      step1StartingPrice: 11863,
       baggagePolicy: '免费托运 2件23KG · 含机上免费Wi-Fi',
       refundPolicy: '退改按航司客规'
     }
   },
   step1StartingPrices: {
-    CA967: 7098,
-    MU243: 9360,
-    MU787: 11865
+    CA967: 8086,
+    MU243: 9359,
+    MU787: 11863
   }
 };
 
@@ -75,8 +74,10 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
 
   console.log(`🚀 [Ctrip Scraper] 启动自动化浏览器 (环境: ${hasLocalChrome ? '本地真实 Chrome' : '云端 Playwright Chromium'}) 抓取真实结算价 (${outDate} / ${inDate})...`);
 
-  let browser = null;
   let context = null;
+  let browser = null;
+  const tempProfileDir = path.join(os.tmpdir(), `ctrip_profile_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
+
   const results = {
     oneway: { ...VERIFIED_FALLBACK_PRICES.oneway },
     roundtrip: { ...VERIFIED_FALLBACK_PRICES.roundtrip },
@@ -91,16 +92,16 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
       '--disable-setuid-sandbox',
       '--disable-infobars',
       '--disable-dev-shm-usage',
-      '--window-size=1280,800'
+      '--window-size=1280,900'
     ];
 
     if (hasLocalChrome) {
-      context = await chromium.launchPersistentContext(USER_DATA_DIR, {
+      context = await chromium.launchPersistentContext(tempProfileDir, {
         executablePath: CHROME_PATH,
         headless: false,
         args: launchArgs,
         ignoreDefaultArgs: ['--enable-automation'],
-        viewport: { width: 1280, height: 800 },
+        viewport: { width: 1280, height: 900 },
         locale: 'zh-CN',
         timezoneId: 'Asia/Shanghai'
       });
@@ -111,7 +112,7 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
       });
       context = await browser.newContext({
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        viewport: { width: 1280, height: 800 },
+        viewport: { width: 1280, height: 900 },
         locale: 'zh-CN',
         timezoneId: 'Asia/Shanghai'
       });
@@ -125,6 +126,11 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
         await page.waitForTimeout(1000);
         const text = await page.evaluate(() => document.body.innerText || '');
         if (text.includes(targetFlight)) return true;
+        // 关闭可能弹出的登录窗
+        const closeBtn = page.locator('.modal-close, [class*="close"], [aria-label="close"]');
+        if (await closeBtn.count() > 0) {
+          await closeBtn.first().click().catch(() => {});
+        }
       }
       return false;
     }
@@ -153,7 +159,7 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
         if (step1Prices.CA967) results.step1StartingPrices.CA967 = step1Prices.CA967;
         if (step1Prices.MU243) results.step1StartingPrices.MU243 = step1Prices.MU243;
 
-        // 真实模拟点击：选定去程 CA967
+        // 选定去程 CA967
         const caBtn = page.locator('.flight-item, [class*="flight-item"]').filter({ hasText: 'CA967' }).locator('button, .btn, [class*="btn"]').filter({ hasText: '选为去程' });
         if (await caBtn.count() > 0) {
           await caBtn.first().click();
@@ -166,7 +172,6 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
               await page.waitForTimeout(2500);
             }
 
-            // 深度解析 CA968 各档位价格，识别留学生限定
             const caCabins = await page.evaluate(() => {
               const items = document.querySelectorAll('.flight-item, [class*="flight-item"]');
               let caItem = null;
@@ -182,34 +187,21 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
               const matches = text.match(/¥\s*(\d[\d,]*)/g) || [];
               const allPrices = matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10));
 
-              // 检查是否有 9686 且包含留学生字样
-              const hasStudent = text.includes('留学生') || text.includes('限留学生预订');
               let studentPrice = null;
-              if (hasStudent && allPrices.includes(9686)) {
-                studentPrice = 9686;
+              if (text.includes('留学生') && allPrices.length > 0) {
+                studentPrice = allPrices[allPrices.length - 1];
               }
 
-              // 普通成人最低有效票价（通常为第一档 9245）
-              const validPrices = allPrices.filter(p => p > 5000 && p !== studentPrice);
-              return {
-                allPrices,
-                validPrices,
-                studentPrice
-              };
+              const validPrices = allPrices.filter(p => p > 5000);
+              return { allPrices, validPrices, studentPrice };
             });
 
-            console.log('[Ctrip Scraper] CA968 舱位解析结果:', caCabins);
-
-            // 精准选取普通成人最低实付价（¥9,245）
-            if (caCabins.validPrices.includes(9245) || (caCabins.validPrices.length > 0 && Math.min(...caCabins.validPrices) < 9500)) {
-              const adultMin = caCabins.validPrices.includes(9245) ? 9245 : Math.min(...caCabins.validPrices);
-              results.roundtrip['CA967+CA968'] = adultMin;
-              results.tierDetails['CA967+CA968'].standardCheckoutPrice = adultMin;
-              console.log(`✅ [Ctrip Scraper] 成功提取到国航普通成人最低实付价 ¥${adultMin} (已智能剔除留学生限定)`);
-            }
-            if (caCabins.studentPrice) {
-              results.tierDetails['CA967+CA968'].studentRestrictedPrice = caCabins.studentPrice;
-              console.log(`ℹ️ [Ctrip Scraper] 识别到国航留学生限定票 ¥${caCabins.studentPrice}`);
+            console.log('[Ctrip Scraper] CA968 实时舱位价格列表:', caCabins);
+            if (caCabins.validPrices.length > 0) {
+              const minAdultPrice = Math.min(...caCabins.validPrices);
+              results.roundtrip['CA967+CA968'] = minAdultPrice;
+              results.tierDetails['CA967+CA968'].standardCheckoutPrice = minAdultPrice;
+              console.log(`✅ [Ctrip Scraper] 实时提取到国航纯直飞最低实付价 ¥${minAdultPrice}`);
             }
           }
         }
@@ -240,16 +232,17 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
                 const t = el.innerText || '';
                 if (t.includes('MU244')) {
                   const matches = t.match(/¥\s*(\d[\d,]*)/g) || [];
-                  return matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10));
+                  return matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10)).filter(p => p > 5000);
                 }
               }
               return [];
             });
-            console.log('[Ctrip Scraper] MU244 展开舱位价格列表:', muPrices);
-            if (muPrices.includes(9712)) {
-              results.roundtrip['MU243+MU244'] = 9712;
-              results.tierDetails['MU243+MU244'].standardCheckoutPrice = 9712;
-              console.log('✅ [Ctrip Scraper] 实时提取到东航米兰纯直飞普通成人标配出票价 ¥9,712');
+            console.log('[Ctrip Scraper] MU244 实时舱位价格列表:', muPrices);
+            if (muPrices.length > 0) {
+              const minMU = Math.min(...muPrices);
+              results.roundtrip['MU243+MU244'] = minMU;
+              results.tierDetails['MU243+MU244'].standardCheckoutPrice = minMU;
+              console.log(`✅ [Ctrip Scraper] 实时提取到东航米兰纯直飞标配价 ¥${minMU}`);
             }
           }
         }
@@ -281,16 +274,17 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
                 const t = el.innerText || '';
                 if (t.includes('MU788')) {
                   const matches = t.match(/¥\s*(\d[\d,]*)/g) || [];
-                  return matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10));
+                  return matches.map(m => parseInt(m.replace(/[¥\s,]/g, ''), 10)).filter(p => p > 5000);
                 }
               }
               return [];
             });
-            console.log('[Ctrip Scraper] MU788 展开舱位价格列表:', fcoPrices);
-            if (fcoPrices.includes(11865)) {
-              results.roundtrip['MU787+MU788'] = 11865;
-              results.tierDetails['MU787+MU788'].standardCheckoutPrice = 11865;
-              console.log('✅ [Ctrip Scraper] 实时提取到东航罗马纯直飞出票价 ¥11,865');
+            console.log('[Ctrip Scraper] MU788 实时舱位价格列表:', fcoPrices);
+            if (fcoPrices.length > 0) {
+              const minFCO = Math.min(...fcoPrices);
+              results.roundtrip['MU787+MU788'] = minFCO;
+              results.tierDetails['MU787+MU788'].standardCheckoutPrice = minFCO;
+              console.log(`✅ [Ctrip Scraper] 实时提取到东航罗马纯直飞出票价 ¥${minFCO}`);
             }
           }
         }
@@ -332,7 +326,7 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
         }, seg.flights);
 
         if (Object.keys(parsed).length > 0) {
-          console.log(`✅ [Ctrip Scraper] ${seg.name} 真实单程价:`, parsed);
+          console.log(`✅ [Ctrip Scraper] ${seg.name} 实时单程价:`, parsed);
           Object.assign(results.oneway, parsed);
         }
       } catch (err) {
@@ -354,6 +348,11 @@ async function scrapeCtripDirectFlights(outDate = '2027-04-10', inDate = '2027-0
   } finally {
     if (context) await context.close().catch(() => {});
     if (browser) await browser.close().catch(() => {});
+    try {
+      if (fs.existsSync(tempProfileDir)) {
+        fs.rmSync(tempProfileDir, { recursive: true, force: true });
+      }
+    } catch (e) {}
   }
 }
 

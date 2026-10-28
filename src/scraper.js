@@ -1274,7 +1274,7 @@ async function fetchGoogleFlightsLive(queryText) {
  */
 function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = [], ctripDirectPrices = null) {
   const { VERIFIED_FALLBACK_PRICES } = require('./ctrip-scraper');
-  const owPrices = ctripDirectPrices?.oneway || (typeof ctripDirectPrices === 'object' && !ctripDirectPrices?.roundtrip ? ctripDirectPrices : VERIFIED_FALLBACK_PRICES.oneway);
+  const owPrices = (ctripDirectPrices && ctripDirectPrices.oneway) || (ctripDirectPrices && typeof ctripDirectPrices === 'object' && !ctripDirectPrices.roundtrip ? ctripDirectPrices : VERIFIED_FALLBACK_PRICES.oneway);
   const templates = FLIGHT_TEMPLATES[segmentKey] || [];
   const results = [];
 
@@ -1352,7 +1352,7 @@ function buildOneWayFlights(segmentKey, depDate, activeCoupons, liveFlights = []
 function buildCombinationFlights(combo, outboundDate, inboundDate, activeCoupons, liveMap = {}, ctripDirectPrices = null) {
   const { VERIFIED_FALLBACK_PRICES } = require('./ctrip-scraper');
   const rtPrices = ctripDirectPrices?.roundtrip || VERIFIED_FALLBACK_PRICES.roundtrip;
-  const owPrices = ctripDirectPrices?.oneway || (typeof ctripDirectPrices === 'object' && !ctripDirectPrices?.roundtrip ? ctripDirectPrices : VERIFIED_FALLBACK_PRICES.oneway);
+  const owPrices = (ctripDirectPrices && ctripDirectPrices.oneway) || (ctripDirectPrices && typeof ctripDirectPrices === 'object' && !ctripDirectPrices.roundtrip ? ctripDirectPrices : VERIFIED_FALLBACK_PRICES.oneway);
 
   const outKey = `${combo.outbound.from}_${combo.outbound.to}`;
   const inKey = `${combo.inbound.from}_${combo.inbound.to}`;

@@ -1398,24 +1398,65 @@ function bindEvents() {
   }
 }
 
-  // ==================== 顶部「⚡ 一键刷新」云端自动化浏览器真抓取流程 ====================
+  // ==================== 顶部「⚡ 一键刷新」真实自动化浏览器抓取流程 ====================
   async function executeRealScrapeFlow() {
     const btn = document.getElementById('refreshNowBtn');
+    const isLocalServer = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '3080';
+
+    // 1. 若在本地 Node 服务环境下运行：直接调用本地自动化浏览器抓取接口
+    if (isLocalServer) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin">🔄</span> 本地真实自动化浏览器抓取中...';
+      showRefreshToast('<span>🚀 <strong>本地自动化浏览器已启动！</strong> 正在使用真实 Chrome 逐个点击抓取携程最新出票价（预计 20~30 秒）...</span>');
+      try {
+        const res = await fetch('/api/refresh', { method: 'POST' });
+        const json = await res.json();
+        if (json.ok && json.snapshot) {
+          state.baseSnapshot = json.snapshot;
+          if (json.priceHistory) state.priceHistory = json.priceHistory;
+          recalculateSnapshotInBrowser(1.0, true);
+          renderAll();
+          btn.disabled = false;
+          btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+          showRefreshToast('<span>✅ <strong>本地自动化浏览器抓取完成！</strong> 携程最新真实直飞出票价已实时反馈并更新至页面！</span>');
+          return;
+        } else {
+          throw new Error(json.reason || '本地刷新服务未返回有效数据');
+        }
+      } catch (err) {
+        console.warn('本地刷新异常，将尝试云端调度:', err.message);
+      }
+    }
+
+    // 2. 云端 GitHub Actions 自动化浏览器调度模式
     const repo = (state.settings.ghRepo || detectGitHubRepoFromUrl() || 'frankwyh/flight-monitor').trim();
     const token = getGitHubToken();
 
-    // 1. 若未配置 Token，直接弹出配置面板
+    // 若未配置 Token，弹出配置面板
     if (!token) {
       openRefreshGuideModal();
       return;
     }
 
-    // 2. 已有 Token，触发调度
     btn.disabled = true;
     btn.innerHTML = '<span class="spin">🔄</span> 云端自动化浏览器开机抓取中...';
-    showRefreshToast('<span>🚀 <strong>已向云端发送调度指令！</strong> GitHub Actions 正在启动 Playwright 自动化浏览器抓取携程最新真价格（预计耗时 40~50 秒）...</span>');
+    showRefreshToast('<span>🚀 <strong>已向云端发送抓取指令！</strong> GitHub Actions 正在启动 Playwright 自动化浏览器抓取携程最新真价格（预计耗时 40~60 秒）...</span>');
 
     try {
+      // 先记录触发前的最新 Run ID，防止立即误判旧的已完成任务
+      let initialRunId = null;
+      try {
+        const prevRes = await fetch(`https://api.github.com/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=1`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+        });
+        if (prevRes.ok) {
+          const prevData = await prevRes.json();
+          if (prevData.workflow_runs && prevData.workflow_runs[0]) {
+            initialRunId = prevData.workflow_runs[0].id;
+          }
+        }
+      } catch (e) {}
+
       const triggerRes = await triggerGitHubWorkflowDispatch();
       if (!triggerRes.ok) {
         btn.disabled = false;
@@ -1426,9 +1467,9 @@ function bindEvents() {
         return;
       }
 
-      // 轮询等待云端自动化浏览器抓取完成
+      // 轮询等待新启动的自动化浏览器任务执行完成
       let attempts = 0;
-      const maxAttempts = 20; // 20 * 4s = 80s
+      const maxAttempts = 30; // 30 * 4s = 120s
       const pollInterval = setInterval(async () => {
         attempts++;
         btn.innerHTML = `<span class="spin">🔄</span> 自动化浏览器抓取中 (${attempts * 4}s)...`;
@@ -1439,15 +1480,23 @@ function bindEvents() {
           if (runsRes.ok) {
             const runsData = await runsRes.json();
             const latestRun = runsData.workflow_runs && runsData.workflow_runs[0];
-            if (latestRun && latestRun.status === 'completed') {
-              clearInterval(pollInterval);
-              await loadDashboard(true);
-              recalculateSnapshotInBrowser(1.0, true);
-              renderAll();
-              btn.disabled = false;
-              btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
-              showRefreshToast('<span>✅ <strong>云端自动化浏览器抓取完成！</strong> 携程最新真实直飞出票价已同步至网页！</span>');
-              return;
+            if (latestRun) {
+              // 必须是新的 Run ID，且 status 必须是 completed
+              if (!initialRunId || latestRun.id !== initialRunId) {
+                if (latestRun.status === 'completed') {
+                  clearInterval(pollInterval);
+                  // 延时 2 秒等待 GitHub Pages 部署同步
+                  setTimeout(async () => {
+                    await loadDashboard(true);
+                    recalculateSnapshotInBrowser(1.0, true);
+                    renderAll();
+                    btn.disabled = false;
+                    btn.innerHTML = '<span id="refreshBtnIcon">⚡</span> 一键刷新';
+                    showRefreshToast('<span>✅ <strong>云端自动化浏览器抓取完成！</strong> 携程最新真实直飞出票价已同步至页面！</span>');
+                  }, 2000);
+                  return;
+                }
+              }
             }
           }
         } catch (e) {}
