@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-10-31T16:45:19.581Z",
+  "generatedAt": "2026-10-31T20:56:44.319Z",
   "scheduleInfo": "每天 09:00 / 21:00 (北京时间) 自动刷新 2 次 + 支持页面手动刷新",
   "settings": {
     "outboundDate": "2027-04-10",
@@ -176,16 +176,6 @@
     }
   },
   "priceHistory": [
-    {
-      "timestamp": "2026-10-26T04:17:45.953Z",
-      "label": "10/26 12:17",
-      "milan_in_rome_out": 5953,
-      "rome_in_milan_out": 6176,
-      "milan_round_trip": 5956,
-      "rome_round_trip": 6173,
-      "direct_lowest": 9075,
-      "business_lowest": 9075
-    },
     {
       "timestamp": "2026-10-26T04:19:55.110Z",
       "label": "10/26 12:19",
@@ -575,11 +565,21 @@
       "rome_round_trip": 6338,
       "direct_lowest": 9598,
       "business_lowest": 13800
+    },
+    {
+      "timestamp": "2026-10-31T20:56:44.317Z",
+      "label": "11/1 04:56",
+      "milan_in_rome_out": 6118,
+      "rome_in_milan_out": 6346,
+      "milan_round_trip": 6126,
+      "rome_round_trip": 6338,
+      "direct_lowest": 9598,
+      "business_lowest": 13800
     }
   ],
   "favorites": [],
   "snapshot": {
-    "fetchedAt": "2026-10-31T16:45:19.580Z",
+    "fetchedAt": "2026-10-31T20:56:44.317Z",
     "outboundDate": "2027-04-10",
     "inboundDate": "2027-04-24",
     "dataSource": "携程官方直飞实时出票引擎 (Ctrip Direct Engine)",
