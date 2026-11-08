@@ -165,16 +165,6 @@
   ],
   "priceHistory": [
     {
-      "timestamp": "2026-10-28T03:51:30.957Z",
-      "label": "10/28 11:51",
-      "milan_in_rome_out": 6118,
-      "rome_in_milan_out": 6346,
-      "milan_round_trip": 6126,
-      "rome_round_trip": 6338,
-      "direct_lowest": 9195,
-      "business_lowest": 13800
-    },
-    {
       "timestamp": "2026-10-28T03:54:17.356Z",
       "label": "10/28 11:54",
       "milan_in_rome_out": 6118,
@@ -557,6 +547,16 @@
     {
       "timestamp": "2026-11-08T04:04:44.750Z",
       "label": "11/8 12:04",
+      "milan_in_rome_out": 6118,
+      "rome_in_milan_out": 6346,
+      "milan_round_trip": 6126,
+      "rome_round_trip": 6338,
+      "direct_lowest": 9598,
+      "business_lowest": 13800
+    },
+    {
+      "timestamp": "2026-11-08T12:41:26.183Z",
+      "label": "11/8 20:41",
       "milan_in_rome_out": 6118,
       "rome_in_milan_out": 6346,
       "milan_round_trip": 6126,
